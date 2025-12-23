@@ -1,13 +1,13 @@
 import { ChatBody } from '@/types/types';
 import { OpenAIStream } from '@/utils/chatStream';
 
-export const runtime = 'nodejs'; // ✅ edge биш, хамгийн найдвартай
+export const runtime = 'nodejs';
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const { inputCode, model, apiKey } = (await req.json()) as ChatBody;
+    const { inputCode, model } = (await req.json()) as ChatBody;
 
-    const apiKeyFinal = apiKey || process.env.OPENAI_API_KEY; // ✅ public биш
+    const apiKeyFinal = process.env.OPENAI_API_KEY;
     if (!apiKeyFinal) {
       return new Response('Missing OPENAI_API_KEY', { status: 400 });
     }
@@ -16,7 +16,6 @@ export async function POST(req: Request): Promise<Response> {
 
     return new Response(stream, {
       headers: {
-        // stream-ийг зөв дамжуулахад хэрэгтэй байж болно
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache, no-transform',
       },
