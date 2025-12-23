@@ -46,7 +46,6 @@ export default function Chat() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const maxLen = useMemo(() => 2000, []);
 
-  // colors
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const inputColor = useColorModeValue('navy.700', 'white');
   const iconColor = useColorModeValue('brand.500', 'white');
@@ -68,7 +67,6 @@ export default function Chat() {
   const assistantBg = useColorModeValue('gray.50', 'whiteAlpha.100');
   const userBg = useColorModeValue('white', 'whiteAlpha.100');
 
-  // ✅ chat стандарт: шинэ мессеж ирэхэд доошоо “auto” scroll (үсрэхгүй)
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
   }, [messages.length, loading]);
@@ -102,14 +100,12 @@ export default function Chat() {
     };
     const assistantId = crypto.randomUUID();
 
-    // ✅ user + assistant placeholder
     setMessages((prev) => [
       ...prev,
       userMsg,
       { id: assistantId, role: 'assistant', content: '' },
     ]);
 
-    // ✅ send дармагц input хоосорно
     setInput('');
     setLoading(true);
 
@@ -141,7 +137,6 @@ export default function Chat() {
         return;
       }
 
-      // ✅ stream → assistant bubble
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let acc = '';
@@ -150,14 +145,13 @@ export default function Chat() {
         const { value, done } = await reader.read();
         if (done) break;
 
-        // ✅ stream decode (давталт/үсрэлт багасна)
         acc += decoder.decode(value || new Uint8Array(), { stream: true });
 
         setMessages((prev) =>
           prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m)),
         );
       }
-    } catch (e) {
+    } catch {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId ? { ...m, content: 'Network error. Try again.' } : m,
@@ -181,19 +175,19 @@ export default function Chat() {
         pointerEvents="none"
       />
 
-      {/* ✅ main content container (sidebar-д хүрэхгүй) */}
+      {/* ✅ IMPORTANT: энэ container FULL HEIGHT байх ёстой */}
       <Flex
         direction="column"
         mx="auto"
         w="100%"
         maxW="1000px"
         flex="1"
-        minH="0"
-        position="relative" // ✅ absolute input бар зөв ажиллах үндэс
+        minH="calc(100vh - 80px)"  // ✅ хамгийн чухал: input дээшээ үсрэхгүй
+        position="relative"
         px={{ base: '10px', md: '0px' }}
       >
         {/* Model / Plugins */}
-        <Flex direction="column" w="100%" mb="10px">
+        <Flex direction="column" w="100%" mb="10px" flexShrink={0}>
           <Flex mx="auto" zIndex="2" w="max-content" mb="16px" borderRadius="60px">
             <Flex
               cursor="pointer"
@@ -267,7 +261,7 @@ export default function Chat() {
           </Accordion>
         </Flex>
 
-        {/* ✅ Messages (зөвхөн энэ хэсэг scroll хийнэ) */}
+        {/* ✅ Messages = scrollable area */}
         <Flex
           direction="column"
           w="100%"
@@ -275,7 +269,7 @@ export default function Chat() {
           minH="0"
           overflowY="auto"
           px={{ base: '4px', md: '10px' }}
-          pb="160px" // ✅ доорхи fixed/absolute input барын зай
+          pb="160px"
         >
           {messages.length === 0 ? (
             <Flex direction="column" align="center" justify="center" mt="30px" opacity={0.9}>
@@ -291,7 +285,6 @@ export default function Chat() {
               const isUser = m.role === 'user';
               return (
                 <Flex key={m.id} w="100%" align="flex-start" mb="12px">
-                  {/* avatar */}
                   <Flex
                     borderRadius="full"
                     justify="center"
@@ -311,7 +304,6 @@ export default function Chat() {
                     />
                   </Flex>
 
-                  {/* bubble */}
                   <Flex
                     direction="column"
                     p="14px 16px"
@@ -356,7 +348,7 @@ export default function Chat() {
           <Box ref={bottomRef} />
         </Flex>
 
-        {/* ✅ INPUT BAR: чатны стандарт шийдэл (sticky биш -> absolute) */}
+        {/* ✅ INPUT BAR: absolute bottom (ХӨДЛӨХГҮЙ) */}
         <Flex
           position="absolute"
           left="0"
@@ -410,18 +402,6 @@ export default function Chat() {
               Submit
             </Button>
           </Flex>
-        </Flex>
-
-        {/* Footer хэрэгтэй бол display="flex" болгоод ашиглаж болно */}
-        <Flex justify="center" mt="14px" alignItems="center" display="none">
-          <Text fontSize="xs" color={gray}>
-            Free Research Preview...
-          </Text>
-          <Link href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes">
-            <Text fontSize="xs" color={textColor} fontWeight="500" textDecoration="underline" ms="6px">
-              ChatGPT Release Notes
-            </Text>
-          </Link>
         </Flex>
       </Flex>
     </Flex>
