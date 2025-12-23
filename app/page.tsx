@@ -1,5 +1,5 @@
 'use client';
-/*eslint-disable*/
+/* eslint-disable */
 
 import Link from '@/components/link/Link';
 import MessageBoxChat from '@/components/MessageBox';
@@ -19,11 +19,10 @@ import {
   Text,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MdAutoAwesome, MdBolt, MdEdit, MdPerson } from 'react-icons/md';
-import Bg from '../public/img/chat/bg-image.png';
 
-export default function Chat(props: { apiKeyApp: string }) {
+export default function Chat() {
   // Input States
   const [inputOnSubmit, setInputOnSubmit] = useState<string>('');
   const [inputCode, setInputCode] = useState<string>('');
@@ -34,8 +33,9 @@ export default function Chat(props: { apiKeyApp: string }) {
   // Loading state
   const [loading, setLoading] = useState<boolean>(false);
 
-  // API Key
-  // const [apiKey, setApiKey] = useState<string>(apiKeyApp);
+  // ✅ Public asset-аа import хийхгүй, path string хэрэглэ (хаана ч байсан ажиллана)
+  const Bg = '/img/chat/bg-image.png';
+
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const inputColor = useColorModeValue('navy.700', 'white');
   const iconColor = useColorModeValue('brand.500', 'white');
@@ -55,12 +55,12 @@ export default function Chat(props: { apiKeyApp: string }) {
     { color: 'gray.500' },
     { color: 'whiteAlpha.600' },
   );
+
   const handleTranslate = async () => {
-    let apiKey = localStorage.getItem('apiKey');
+    const apiKey = localStorage.getItem('apiKey');
     setInputOnSubmit(inputCode);
 
-    // Chat post conditions(maximum number of characters, valid message etc.)
-    const maxCodeLength = model === 'gpt-4o' ? 700 : 700;
+    const maxCodeLength = 700;
 
     if (!apiKey?.includes('sk-')) {
       alert('Please enter an API key.');
@@ -78,37 +78,35 @@ export default function Chat(props: { apiKeyApp: string }) {
       );
       return;
     }
+
     setOutputCode(' ');
     setLoading(true);
+
     const controller = new AbortController();
+
     const body: ChatBody = {
       inputCode,
       model,
       apiKey,
     };
 
-    // -------------- Fetch --------------
-    const response = await fetch('./api/chatAPI', {
+    // ✅ "./api/..." биш "/api/..." болго (Next дээр зөв)
+    const response = await fetch('/api/chatAPI', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify(body),
     });
 
     if (!response.ok) {
       setLoading(false);
-      if (response) {
-        alert(
-          'Something went wrong went fetching from the API. Make sure to use a valid API key.',
-        );
-      }
+      alert(
+        'Something went wrong when fetching from the API. Make sure to use a valid API key.',
+      );
       return;
     }
 
     const data = response.body;
-
     if (!data) {
       setLoading(false);
       alert('Something went wrong');
@@ -120,33 +118,14 @@ export default function Chat(props: { apiKeyApp: string }) {
     let done = false;
 
     while (!done) {
-      setLoading(true);
       const { value, done: doneReading } = await reader.read();
       done = doneReading;
       const chunkValue = decoder.decode(value);
-      setOutputCode((prevCode) => prevCode + chunkValue);
+      setOutputCode((prev) => prev + chunkValue);
     }
 
     setLoading(false);
   };
-  // -------------- Copy Response --------------
-  // const copyToClipboard = (text: string) => {
-  //   const el = document.createElement('textarea');
-  //   el.value = text;
-  //   document.body.appendChild(el);
-  //   el.select();
-  //   document.execCommand('copy');
-  //   document.body.removeChild(el);
-  // };
-
-  // *** Initializing apiKey with .env.local value
-  // useEffect(() => {
-  // ENV file verison
-  // const apiKeyENV = process.env.NEXT_PUBLIC_OPENAI_API_KEY
-  // if (apiKey === undefined || null) {
-  //   setApiKey(apiKeyENV)
-  // }
-  // }, [])
 
   const handleChange = (Event: any) => {
     setInputCode(Event.target.value);
@@ -160,13 +139,14 @@ export default function Chat(props: { apiKeyApp: string }) {
       position="relative"
     >
       <Img
-        src={Bg.src}
+        src={Bg}
         position={'absolute'}
         w="350px"
         left="50%"
         top="50%"
         transform={'translate(-50%, -50%)'}
       />
+
       <Flex
         direction="column"
         mx="auto"
@@ -216,6 +196,7 @@ export default function Chat(props: { apiKeyApp: string }) {
               </Flex>
               GPT-4o
             </Flex>
+
             <Flex
               cursor={'pointer'}
               transition="0.3s"
@@ -240,12 +221,7 @@ export default function Chat(props: { apiKeyApp: string }) {
                 h="39px"
                 w="39px"
               >
-                <Icon
-                  as={MdBolt}
-                  width="20px"
-                  height="20px"
-                  color={iconColor}
-                />
+                <Icon as={MdBolt} width="20px" height="20px" color={iconColor} />
               </Flex>
               GPT-3.5
             </Flex>
@@ -280,6 +256,7 @@ export default function Chat(props: { apiKeyApp: string }) {
             </AccordionItem>
           </Accordion>
         </Flex>
+
         {/* Main Box */}
         <Flex
           direction="column"
@@ -301,12 +278,7 @@ export default function Chat(props: { apiKeyApp: string }) {
               minH="40px"
               minW="40px"
             >
-              <Icon
-                as={MdPerson}
-                width="20px"
-                height="20px"
-                color={brandColor}
-              />
+              <Icon as={MdPerson} width="20px" height="20px" color={brandColor} />
             </Flex>
             <Flex
               p="22px"
@@ -334,6 +306,7 @@ export default function Chat(props: { apiKeyApp: string }) {
               />
             </Flex>
           </Flex>
+
           <Flex w="100%">
             <Flex
               borderRadius="full"
@@ -345,22 +318,14 @@ export default function Chat(props: { apiKeyApp: string }) {
               minH="40px"
               minW="40px"
             >
-              <Icon
-                as={MdAutoAwesome}
-                width="20px"
-                height="20px"
-                color="white"
-              />
+              <Icon as={MdAutoAwesome} width="20px" height="20px" color="white" />
             </Flex>
             <MessageBoxChat output={outputCode} />
           </Flex>
         </Flex>
+
         {/* Chat Input */}
-        <Flex
-          ms={{ base: '0px', xl: '60px' }}
-          mt="20px"
-          justifySelf={'flex-end'}
-        >
+        <Flex ms={{ base: '0px', xl: '60px' }} mt="20px" justifySelf={'flex-end'}>
           <Input
             minH="54px"
             h="100%"
@@ -387,15 +352,14 @@ export default function Chat(props: { apiKeyApp: string }) {
             w={{ base: '160px', md: '210px' }}
             h="54px"
             _hover={{
-              boxShadow:
-                '0px 21px 27px -10px rgba(96, 60, 255, 0.48) !important',
+              boxShadow: '0px 21px 27px -10px rgba(96, 60, 255, 0.48) !important',
               bg: 'linear-gradient(15.46deg, #4A25E1 26.3%, #7B5AFF 86.4%) !important',
               _disabled: {
                 bg: 'linear-gradient(15.46deg, #4A25E1 26.3%, #7B5AFF 86.4%)',
               },
             }}
             onClick={handleTranslate}
-            isLoading={loading ? true : false}
+            isLoading={loading}
           >
             Submit
           </Button>
@@ -408,8 +372,8 @@ export default function Chat(props: { apiKeyApp: string }) {
           alignItems="center"
         >
           <Text fontSize="xs" textAlign="center" color={gray}>
-            Free Research Preview. ChatGPT may produce inaccurate information
-            about people, places, or facts.
+            Free Research Preview. ChatGPT may produce inaccurate information about
+            people, places, or facts.
           </Text>
           <Link href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes">
             <Text
