@@ -3,7 +3,7 @@
 
 import Link from '@/components/link/Link';
 import MessageBoxChat from '@/components/MessageBox';
-import { ChatBody, OpenAIModel } from '@/types/types';
+import { OpenAIModel } from '@/types/types';
 import {
   Accordion,
   AccordionButton,
@@ -22,10 +22,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { MdAutoAwesome, MdBolt, MdEdit, MdPerson } from 'react-icons/md';
 
-// ✅ public asset path
 const Bg = '/img/chat/bg-image.png';
-
-// ✅ brand
 const BRAND = '#1F6FB2';
 
 export default function Chat() {
@@ -35,10 +32,12 @@ export default function Chat() {
   const [model, setModel] = useState<OpenAIModel>('gpt-3.5-turbo');
   const [loading, setLoading] = useState<boolean>(false);
 
-  // ✅ scroll anchor
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  // colors
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [outputCode, loading]);
+
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const inputColor = useColorModeValue('navy.700', 'white');
   const iconColor = useColorModeValue('brand.500', 'white');
@@ -46,7 +45,6 @@ export default function Chat() {
     'linear-gradient(180deg, #FBFBFF 0%, #CACAFF 100%)',
     'whiteAlpha.200',
   );
-  const brandColor = useColorModeValue('brand.500', 'white');
   const buttonBg = useColorModeValue('white', 'whiteAlpha.100');
   const gray = useColorModeValue('gray.500', 'white');
   const buttonShadow = useColorModeValue(
@@ -59,60 +57,36 @@ export default function Chat() {
     { color: 'whiteAlpha.600' },
   );
 
-  // ✅ output нэмэгдэхэд доош гүйлгэнэ
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [outputCode, loading]);
-
-  const handleChange = (e: any) => {
-    setInputCode(e.target.value);
-  };
-
   const handleTranslate = async () => {
-    // ⚠️ Танай одоогийн урсгал localStorage apiKey шаарддаг.
-    // Хэрвээ та Vercel ENV ашиглах бол энэ хэсгийг дараа нь цэвэрлэж болно.
-    let apiKey = localStorage.getItem('apiKey');
+    const trimmed = inputCode.trim();
+    const maxLen = 1200;
 
-    setInputOnSubmit(inputCode);
-
-    const maxCodeLength = 700;
-
-    if (!apiKey?.includes('sk-')) {
-      alert('Please enter an API key.');
-      return;
-    }
-    if (!inputCode) {
+    if (!trimmed) {
       alert('Please enter your message.');
       return;
     }
-    if (inputCode.length > maxCodeLength) {
-      alert(
-        `Please enter less than ${maxCodeLength} characters. You are currently at ${inputCode.length} characters.`,
-      );
+    if (trimmed.length > maxLen) {
+      alert(`Too long (${trimmed.length}/${maxLen}).`);
       return;
     }
 
+    setInputOnSubmit(trimmed);
     setOutputCode('');
     setLoading(true);
 
-    const controller = new AbortController();
-    const body: ChatBody = {
-      inputCode,
-      model,
-      apiKey,
-    };
-
-    // ✅ route чинь /api/chatAPI байгаа тул үүнийг хэвээр үлдээлээ
     const response = await fetch('/api/chatAPI', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        inputCode: trimmed,
+        model, // ✅ server env key ашиглана
+      }),
     });
 
     if (!response.ok) {
+      const t = await response.text().catch(() => '');
       setLoading(false);
-      alert('API error. Check API key or server logs.');
+      alert(`API error: ${t || response.status}`);
       return;
     }
 
@@ -139,7 +113,6 @@ export default function Chat() {
 
   return (
     <Flex w="100%" direction="column" position="relative">
-      {/* bg */}
       <Img
         src={Bg}
         position="absolute"
@@ -151,13 +124,11 @@ export default function Chat() {
         pointerEvents="none"
       />
 
-      {/* ✅ MAIN CONTENT BOX (sidebar эвдэхгүй, дотороо зөв layout) */}
       <Flex
         direction="column"
         mx="auto"
         w="100%"
         maxW="1000px"
-        // ✅ template-ийн main content өндөр дээр ажиллахын тулд:
         flex="1"
         minH="0"
         position="relative"
@@ -225,7 +196,7 @@ export default function Chat() {
               >
                 <Icon as={MdBolt} boxSize="18px" color={iconColor} />
               </Flex>
-              GPT-4
+              GPT-4o
             </Flex>
           </Flex>
 
@@ -254,7 +225,7 @@ export default function Chat() {
           </Accordion>
         </Flex>
 
-        {/* ✅ MESSAGES SCROLLER (чат стандарт) */}
+        {/* ✅ Messages scroller */}
         <Flex
           direction="column"
           w="100%"
@@ -262,13 +233,11 @@ export default function Chat() {
           minH="0"
           overflowY="auto"
           px={{ base: '4px', md: '10px' }}
-          // ✅ input bar overlay болох тул доор padding өгнө
           pb="120px"
         >
-          {/* show only when there is output (танай хуучин логик) */}
           {outputCode ? (
             <>
-              {/* user bubble */}
+              {/* user row */}
               <Flex w="100%" align="flex-start" mb="12px">
                 <Flex
                   borderRadius="full"
@@ -279,7 +248,6 @@ export default function Chat() {
                   borderColor={borderColor}
                   me="14px"
                   h="36px"
-                  minH="36px"
                   minW="36px"
                   mt="2px"
                 >
@@ -316,7 +284,7 @@ export default function Chat() {
                 </Flex>
               </Flex>
 
-              {/* assistant bubble */}
+              {/* assistant row */}
               <Flex w="100%" align="flex-start" mb="12px">
                 <Flex
                   borderRadius="full"
@@ -325,7 +293,6 @@ export default function Chat() {
                   bg={BRAND}
                   me="14px"
                   h="36px"
-                  minH="36px"
                   minW="36px"
                   mt="2px"
                 >
@@ -333,7 +300,6 @@ export default function Chat() {
                 </Flex>
 
                 <Box w="100%">
-                  {/* MessageBoxChat хэвээр ашиглая */}
                   <MessageBoxChat output={outputCode} />
                 </Box>
               </Flex>
@@ -341,30 +307,22 @@ export default function Chat() {
               <Box ref={bottomRef} />
             </>
           ) : (
-            <Flex
-              direction="column"
-              align="center"
-              justify="center"
-              mt="30px"
-              opacity={0.9}
-            >
+            <Flex direction="column" align="center" justify="center" mt="30px" opacity={0.9}>
               <Text color={textColor} fontWeight="700">
                 Сайн уу 👋
               </Text>
               <Text color={gray} fontSize="sm" textAlign="center" mt="6px" maxW="520px">
-                Доор мессежээ бичээд “Submit” дар. (Enter = илгээх болгож хүсвэл дараа тохируулна)
+                Доор мессежээ бичээд Submit дар.
               </Text>
             </Flex>
           )}
         </Flex>
 
-        {/* ✅ INPUT BAR: template дотороо доор тогтмол (sticky биш, absolute) */}
+        {/* ✅ Input bar (доор тогтмол) */}
         <Flex
-          position="absolute"
-          left="0"
-          right="0"
+          position="sticky"
           bottom="0"
-          zIndex={5}
+          zIndex={10}
           bg={useColorModeValue('white', 'navy.900')}
           borderTop="1px solid"
           borderColor={borderColor}
@@ -375,13 +333,19 @@ export default function Chat() {
           <Flex w="100%" gap="10px" align="center">
             <Input
               value={inputCode}
-              onChange={handleChange}
+              onChange={(e) => setInputCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!loading) handleTranslate();
+                }
+              }}
               minH="52px"
               h="52px"
-              flex="1" // ✅ урт-нарийхан асуудал алга
+              flex="1"
               border="1px solid"
               borderColor={borderColor}
-              borderRadius="14px" // ✅ стандарт look (pill биш)
+              borderRadius="14px"
               px="14px"
               fontSize="sm"
               fontWeight="500"
@@ -391,7 +355,6 @@ export default function Chat() {
               placeholder="Type your message here..."
               isDisabled={loading}
             />
-
             <Button
               h="52px"
               px={{ base: '18px', md: '26px' }}
@@ -407,31 +370,6 @@ export default function Chat() {
               Submit
             </Button>
           </Flex>
-        </Flex>
-
-        {/* ✅ энэ notice чатаас доош түлхээд байсан — одоо scroller дотор биш тул зай “үсрэхгүй”.
-            Хүсэхгүй бол бүр устгаарай. */}
-        <Flex
-          justify="center"
-          mt="14px"
-          direction={{ base: 'column', md: 'row' }}
-          alignItems="center"
-          display="none" // ✅ default: нуучихлаа (та хүсвэл show болго)
-        >
-          <Text fontSize="xs" textAlign="center" color={gray}>
-            Free Research Preview. ChatGPT may produce inaccurate information about
-            people, places, or facts.
-          </Text>
-          <Link href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes">
-            <Text
-              fontSize="xs"
-              color={textColor}
-              fontWeight="500"
-              textDecoration="underline"
-            >
-              ChatGPT May 12 Version
-            </Text>
-          </Link>
         </Flex>
       </Flex>
     </Flex>
