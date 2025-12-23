@@ -1,39 +1,35 @@
 import endent from 'endent';
-import {
-  createParser,
-  ParsedEvent,
-  ReconnectInterval,
-} from 'eventsource-parser';
+import { createParser, type ParsedEvent, type ReconnectInterval } from 'eventsource-parser';
 
-const createPrompt = (inputCode: string) => {
-  const data = (inputCode: string) => {
-    return endent`${inputCode}`;
-  };
-
-  if (inputCode) {
-    return data(inputCode);
-  }
-};
+const createPrompt = (inputCode: string) => endent`${inputCode}`;
 
 export const OpenAIStream = async (
   inputCode: string,
   model: string,
-  key: string | undefined,
+  key?: string, // ✅ server env key энд ирнэ
 ) => {
-  const prompt = createPrompt(inputCode);
+  if (!inputCode?.trim()) {
+    throw new Error('Missing inputCode');
+  }
 
-  const system = { role: 'system', content: prompt };
+  const apiKey = key || process.env.OPENAI_API_KEY; // ✅ зөвхөн server env
+  if (!apiKey) {
+    throw new Error('Missing OPENAI_API_KEY');
+  }
 
-  const res = await fetch(`https://api.openai.com/v1/chat/completions`, {
+  // ✅ User-ийн бичсэн зүйл USER role-оор явна
+  const userMessage = { role: 'user', content: createPrompt(inputCode) };
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${key || process.env.NEXT_PUBLIC_OPENAI_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
-    method: 'POST',
     body: JSON.stringify({
       model,
-      messages: [system],
-      temperature: 0,
+      messages: [userMessage],
+      temperature: 0.2,
       stream: true,
     }),
   });
@@ -41,42 +37,43 @@ export const OpenAIStream = async (
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
-  if (res.status !== 200) {
-    const statusText = res.statusText;
-    const result = await res.body?.getReader().read();
-    throw new Error(
-      `OpenAI API returned an error: ${
-        decoder.decode(result?.value) || statusText
-      }`,
-    );
+  if (!res.ok) {
+    const errText = await res.text().catch(() => res.statusText);
+    throw new Error(`OpenAI API error (${res.status}): ${errText}`);
   }
 
-  const stream = new ReadableStream({
+  if (!res.body) {
+    throw new Error('OpenAI response has no body');
+  }
+
+  const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const onParse = (event: ParsedEvent | ReconnectInterval) => {
-        if (event.type === 'event') {
-          const data = event.data;
+      const parser = createParser((event: ParsedEvent | ReconnectInterval) => {
+        if (event.type !== 'event') return;
 
-          if (data === '[DONE]') {
-            controller.close();
-            return;
-          }
-
-          try {
-            const json = JSON.parse(data);
-            const text = json.choices[0].delta.content;
-            const queue = encoder.encode(text);
-            controller.enqueue(queue);
-          } catch (e) {
-            controller.error(e);
-          }
+        const data = event.data;
+        if (data === '[DONE]') {
+          controller.close();
+          return;
         }
-      };
 
-      const parser = createParser(onParse);
+        try {
+          const json = JSON.parse(data);
 
-      for await (const chunk of res.body as any) {
-        parser.feed(decoder.decode(chunk));
+          // ✅ delta.content байхгүй үед '' гэж үзнэ
+          const text: string = json?.choices?.[0]?.delta?.content ?? '';
+          if (text) controller.enqueue(encoder.encode(text));
+        } catch (e) {
+          controller.error(e);
+        }
+      });
+
+      try {
+        for await (const chunk of res.body as any) {
+          parser.feed(decoder.decode(chunk));
+        }
+      } catch (e) {
+        controller.error(e);
       }
     },
   });
