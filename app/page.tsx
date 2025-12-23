@@ -1,8 +1,7 @@
 'use client';
-/*eslint-disable*/
+/* eslint-disable */
 
 import Link from '@/components/link/Link';
-import MessageBoxChat from '@/components/MessageBox';
 import { OpenAIModel } from '@/types/types';
 import {
   Accordion,
@@ -17,27 +16,31 @@ import {
   Img,
   Input,
   Text,
+  Tooltip,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { useEffect, useRef, useState } from 'react';
-import { MdAutoAwesome, MdBolt, MdEdit, MdPerson } from 'react-icons/md';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { MdAutoAwesome, MdBolt, MdContentCopy, MdEdit, MdPerson } from 'react-icons/md';
 
 const Bg = '/img/chat/bg-image.png';
 const BRAND = '#1F6FB2';
 
+type ChatMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 export default function Chat() {
-  const [inputOnSubmit, setInputOnSubmit] = useState<string>('');
-  const [inputCode, setInputCode] = useState<string>('');
-  const [outputCode, setOutputCode] = useState<string>('');
   const [model, setModel] = useState<OpenAIModel>('gpt-3.5-turbo');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const maxLen = useMemo(() => 2000, []);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [outputCode, loading]);
-
+  // colors
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const inputColor = useColorModeValue('navy.700', 'white');
   const iconColor = useColorModeValue('brand.500', 'white');
@@ -56,59 +59,95 @@ export default function Chat() {
     { color: 'gray.500' },
     { color: 'whiteAlpha.600' },
   );
+  const assistantBg = useColorModeValue('gray.50', 'whiteAlpha.100');
+  const userBg = useColorModeValue('white', 'whiteAlpha.100');
 
-  const handleTranslate = async () => {
-    const trimmed = inputCode.trim();
-    const maxLen = 1200;
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages.length, loading]);
 
-    if (!trimmed) {
-      alert('Please enter your message.');
-      return;
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
     }
+  };
+
+  const send = async () => {
+    const trimmed = input.trim();
+    if (!trimmed || loading) return;
+
     if (trimmed.length > maxLen) {
-      alert(`Too long (${trimmed.length}/${maxLen}).`);
+      alert(`Хэт урт байна (${trimmed.length}/${maxLen}).`);
       return;
     }
 
-    setInputOnSubmit(trimmed);
-    setOutputCode('');
+    // ✅ add user message + assistant placeholder
+    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: trimmed };
+    const assistantId = crypto.randomUUID();
+
+    setMessages((prev) => [
+      ...prev,
+      userMsg,
+      { id: assistantId, role: 'assistant', content: '' },
+    ]);
+
+    // ✅ clear input immediately
+    setInput('');
     setLoading(true);
 
-    const response = await fetch('/api/chatAPI', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        inputCode: trimmed,
-        model, // ✅ server env key ашиглана
-      }),
-    });
+    try {
+      const res = await fetch('/api/chatAPI', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputCode: trimmed, model }),
+      });
 
-    if (!response.ok) {
-      const t = await response.text().catch(() => '');
+      if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: `API error: ${t || res.status}` } : m,
+          ),
+        );
+        return;
+      }
+
+      if (!res.body) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: 'Empty response body.' } : m)),
+        );
+        return;
+      }
+
+      // ✅ stream response into assistant bubble
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value || new Uint8Array(), { stream: true });
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m)),
+        );
+      }
+    } catch (e) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId ? { ...m, content: 'Network error. Try again.' } : m,
+        ),
+      );
+    } finally {
       setLoading(false);
-      alert(`API error: ${t || response.status}`);
-      return;
     }
-
-    const data = response.body;
-    if (!data) {
-      setLoading(false);
-      alert('Empty response body');
-      return;
-    }
-
-    const reader = data.getReader();
-    const decoder = new TextDecoder();
-    let done = false;
-
-    while (!done) {
-      const { value, done: doneReading } = await reader.read();
-      done = doneReading;
-      const chunkValue = decoder.decode(value || new Uint8Array());
-      setOutputCode((prev) => prev + chunkValue);
-    }
-
-    setLoading(false);
   };
 
   return (
@@ -124,6 +163,7 @@ export default function Chat() {
         pointerEvents="none"
       />
 
+      {/* ✅ container inside template content */}
       <Flex
         direction="column"
         mx="auto"
@@ -134,7 +174,7 @@ export default function Chat() {
         position="relative"
         px={{ base: '10px', md: '0px' }}
       >
-        {/* Model Change */}
+        {/* model / plugins */}
         <Flex direction="column" w="100%" mb="10px">
           <Flex mx="auto" zIndex="2" w="max-content" mb="16px" borderRadius="60px">
             <Flex
@@ -154,15 +194,7 @@ export default function Chat() {
               border="1px solid"
               borderColor={model === 'gpt-3.5-turbo' ? BRAND : 'transparent'}
             >
-              <Flex
-                borderRadius="full"
-                justify="center"
-                align="center"
-                bg={bgIcon}
-                me="10px"
-                h="36px"
-                w="36px"
-              >
+              <Flex borderRadius="full" justify="center" align="center" bg={bgIcon} me="10px" h="36px" w="36px">
                 <Icon as={MdAutoAwesome} boxSize="18px" color={iconColor} />
               </Flex>
               GPT-3.5
@@ -185,15 +217,7 @@ export default function Chat() {
               border="1px solid"
               borderColor={model === 'gpt-4o' ? BRAND : 'transparent'}
             >
-              <Flex
-                borderRadius="full"
-                justify="center"
-                align="center"
-                bg={bgIcon}
-                me="10px"
-                h="36px"
-                w="36px"
-              >
+              <Flex borderRadius="full" justify="center" align="center" bg={bgIcon} me="10px" h="36px" w="36px">
                 <Icon as={MdBolt} boxSize="18px" color={iconColor} />
               </Flex>
               GPT-4o
@@ -225,7 +249,7 @@ export default function Chat() {
           </Accordion>
         </Flex>
 
-        {/* ✅ Messages scroller */}
+        {/* ✅ messages scroll area */}
         <Flex
           direction="column"
           w="100%"
@@ -235,90 +259,82 @@ export default function Chat() {
           px={{ base: '4px', md: '10px' }}
           pb="120px"
         >
-          {outputCode ? (
-            <>
-              {/* user row */}
-              <Flex w="100%" align="flex-start" mb="12px">
-                <Flex
-                  borderRadius="full"
-                  justify="center"
-                  align="center"
-                  bg="transparent"
-                  border="1px solid"
-                  borderColor={borderColor}
-                  me="14px"
-                  h="36px"
-                  minW="36px"
-                  mt="2px"
-                >
-                  <Icon as={MdPerson} boxSize="18px" color={BRAND} />
-                </Flex>
-
-                <Flex
-                  p="14px 16px"
-                  border="1px solid"
-                  borderColor={borderColor}
-                  borderRadius="18px"
-                  w="100%"
-                  bg={useColorModeValue('white', 'whiteAlpha.100')}
-                  boxShadow={useColorModeValue('sm', 'none')}
-                >
-                  <Text
-                    color={textColor}
-                    fontWeight="600"
-                    fontSize={{ base: 'sm', md: 'md' }}
-                    lineHeight={{ base: '22px', md: '24px' }}
-                    whiteSpace="pre-wrap"
-                    wordBreak="break-word"
-                  >
-                    {inputOnSubmit}
-                  </Text>
-                  <Icon
-                    cursor="pointer"
-                    as={MdEdit}
-                    ms="auto"
-                    boxSize="18px"
-                    color={gray}
-                    onClick={() => setInputCode(inputOnSubmit)}
-                  />
-                </Flex>
-              </Flex>
-
-              {/* assistant row */}
-              <Flex w="100%" align="flex-start" mb="12px">
-                <Flex
-                  borderRadius="full"
-                  justify="center"
-                  align="center"
-                  bg={BRAND}
-                  me="14px"
-                  h="36px"
-                  minW="36px"
-                  mt="2px"
-                >
-                  <Icon as={MdAutoAwesome} boxSize="18px" color="white" />
-                </Flex>
-
-                <Box w="100%">
-                  <MessageBoxChat output={outputCode} />
-                </Box>
-              </Flex>
-
-              <Box ref={bottomRef} />
-            </>
-          ) : (
+          {messages.length === 0 ? (
             <Flex direction="column" align="center" justify="center" mt="30px" opacity={0.9}>
               <Text color={textColor} fontWeight="700">
                 Сайн уу 👋
               </Text>
               <Text color={gray} fontSize="sm" textAlign="center" mt="6px" maxW="520px">
-                Доор мессежээ бичээд Submit дар.
+                Доор мессежээ бичээд Submit дар. (Enter = илгээх)
               </Text>
             </Flex>
+          ) : (
+            messages.map((m) => {
+              const isUser = m.role === 'user';
+              return (
+                <Flex key={m.id} w="100%" align="flex-start" mb="12px">
+                  {/* avatar */}
+                  <Flex
+                    borderRadius="full"
+                    justify="center"
+                    align="center"
+                    bg={isUser ? 'transparent' : BRAND}
+                    border={isUser ? '1px solid' : 'none'}
+                    borderColor={isUser ? borderColor : 'transparent'}
+                    me="14px"
+                    h="36px"
+                    minW="36px"
+                    mt="2px"
+                  >
+                    <Icon as={isUser ? MdPerson : MdAutoAwesome} boxSize="18px" color={isUser ? BRAND : 'white'} />
+                  </Flex>
+
+                  {/* bubble */}
+                  <Flex
+                    direction="column"
+                    p="14px 16px"
+                    border="1px solid"
+                    borderColor={borderColor}
+                    borderRadius="18px"
+                    w="100%"
+                    bg={isUser ? userBg : assistantBg}
+                    boxShadow={useColorModeValue('sm', 'none')}
+                  >
+                    <Text
+                      color={textColor}
+                      fontWeight="600"
+                      fontSize={{ base: 'sm', md: 'md' }}
+                      lineHeight={{ base: '22px', md: '24px' }}
+                      whiteSpace="pre-wrap"
+                      wordBreak="break-word"
+                    >
+                      {m.content}
+                    </Text>
+
+                    <Flex mt="10px" gap="10px" justify="flex-end" opacity={0.9}>
+                      {isUser && (
+                        <Tooltip label="Edit" hasArrow>
+                          <Box cursor="pointer" onClick={() => setInput(m.content)}>
+                            <Icon as={MdEdit} boxSize="18px" color={gray} />
+                          </Box>
+                        </Tooltip>
+                      )}
+                      <Tooltip label="Copy" hasArrow>
+                        <Box cursor="pointer" onClick={() => copyToClipboard(m.content)}>
+                          <Icon as={MdContentCopy} boxSize="18px" color={gray} />
+                        </Box>
+                      </Tooltip>
+                    </Flex>
+                  </Flex>
+                </Flex>
+              );
+            })
           )}
+
+          <Box ref={bottomRef} />
         </Flex>
 
-        {/* ✅ Input bar (доор тогтмол) */}
+        {/* ✅ input bar fixed in-page */}
         <Flex
           position="sticky"
           bottom="0"
@@ -332,12 +348,12 @@ export default function Chat() {
         >
           <Flex w="100%" gap="10px" align="center">
             <Input
-              value={inputCode}
-              onChange={(e) => setInputCode(e.target.value)}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  if (!loading) handleTranslate();
+                  send();
                 }
               }}
               minH="52px"
@@ -363,13 +379,25 @@ export default function Chat() {
               color="white"
               _hover={{ opacity: 0.92 }}
               _active={{ opacity: 0.86 }}
-              onClick={handleTranslate}
+              onClick={send}
               isLoading={loading}
               flexShrink={0}
             >
               Submit
             </Button>
           </Flex>
+        </Flex>
+
+        {/* Footer-оо буцаая гэвэл энд үзүүлж болно */}
+        <Flex justify="center" mt="14px" alignItems="center" display="none">
+          <Text fontSize="xs" color={gray}>
+            Free Research Preview...
+          </Text>
+          <Link href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes">
+            <Text fontSize="xs" color={textColor} fontWeight="500" textDecoration="underline" ms="6px">
+              ChatGPT Release Notes
+            </Text>
+          </Link>
         </Flex>
       </Flex>
     </Flex>
