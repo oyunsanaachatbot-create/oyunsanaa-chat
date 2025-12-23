@@ -202,17 +202,17 @@ export default function Chat() {
               transition="0.3s"
               justify="center"
               align="center"
-              bg={model === 'gpt-4' ? buttonBg : 'transparent'}
+              bg={model === 'gpt-4o' ? buttonBg : 'transparent'}
               w="164px"
               h="64px"
-              boxShadow={model === 'gpt-4' ? buttonShadow : 'none'}
+              boxShadow={model === 'gpt-4o' ? buttonShadow : 'none'}
               borderRadius="14px"
               color={textColor}
               fontSize="16px"
               fontWeight="700"
-              onClick={() => setModel('gpt-4')}
+              onClick={() => setModel('gpt-4o')}
               border="1px solid"
-              borderColor={model === 'gpt-4' ? BRAND : 'transparent'}
+              borderColor={model === 'gpt-4o' ? BRAND : 'transparent'}
             >
               <Flex
                 borderRadius="full"
