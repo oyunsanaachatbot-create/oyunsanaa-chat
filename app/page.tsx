@@ -28,7 +28,7 @@ const Bg = '/img/chat/bg-image.png';
 // ✅ brand
 const BRAND = '#1F6FB2';
 
-export default function Chat(props: { apiKeyApp: string }) {
+export default function Chat() {
   const [inputOnSubmit, setInputOnSubmit] = useState<string>('');
   const [inputCode, setInputCode] = useState<string>('');
   const [outputCode, setOutputCode] = useState<string>('');
