@@ -20,7 +20,13 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MdAutoAwesome, MdBolt, MdContentCopy, MdEdit, MdPerson } from 'react-icons/md';
+import {
+  MdAutoAwesome,
+  MdBolt,
+  MdContentCopy,
+  MdEdit,
+  MdPerson,
+} from 'react-icons/md';
 
 const Bg = '/img/chat/bg-image.png';
 const BRAND = '#1F6FB2';
@@ -62,8 +68,9 @@ export default function Chat() {
   const assistantBg = useColorModeValue('gray.50', 'whiteAlpha.100');
   const userBg = useColorModeValue('white', 'whiteAlpha.100');
 
+  // ✅ chat стандарт: шинэ мессеж ирэхэд доошоо “auto” scroll (үсрэхгүй)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    bottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
   }, [messages.length, loading]);
 
   const copyToClipboard = async (text: string) => {
@@ -88,17 +95,21 @@ export default function Chat() {
       return;
     }
 
-    // ✅ add user message + assistant placeholder
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: trimmed };
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: trimmed,
+    };
     const assistantId = crypto.randomUUID();
 
+    // ✅ user + assistant placeholder
     setMessages((prev) => [
       ...prev,
       userMsg,
       { id: assistantId, role: 'assistant', content: '' },
     ]);
 
-    // ✅ clear input immediately
+    // ✅ send дармагц input хоосорно
     setInput('');
     setLoading(true);
 
@@ -113,7 +124,9 @@ export default function Chat() {
         const t = await res.text().catch(() => '');
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantId ? { ...m, content: `API error: ${t || res.status}` } : m,
+            m.id === assistantId
+              ? { ...m, content: `API error: ${t || res.status}` }
+              : m,
           ),
         );
         return;
@@ -121,12 +134,14 @@ export default function Chat() {
 
       if (!res.body) {
         setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content: 'Empty response body.' } : m)),
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: 'Empty response body.' } : m,
+          ),
         );
         return;
       }
 
-      // ✅ stream response into assistant bubble
+      // ✅ stream → assistant bubble
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let acc = '';
@@ -134,7 +149,10 @@ export default function Chat() {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
+
+        // ✅ stream decode (давталт/үсрэлт багасна)
         acc += decoder.decode(value || new Uint8Array(), { stream: true });
+
         setMessages((prev) =>
           prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m)),
         );
@@ -163,7 +181,7 @@ export default function Chat() {
         pointerEvents="none"
       />
 
-      {/* ✅ container inside template content */}
+      {/* ✅ main content container (sidebar-д хүрэхгүй) */}
       <Flex
         direction="column"
         mx="auto"
@@ -171,10 +189,10 @@ export default function Chat() {
         maxW="1000px"
         flex="1"
         minH="0"
-        position="relative"
+        position="relative" // ✅ absolute input бар зөв ажиллах үндэс
         px={{ base: '10px', md: '0px' }}
       >
-        {/* model / plugins */}
+        {/* Model / Plugins */}
         <Flex direction="column" w="100%" mb="10px">
           <Flex mx="auto" zIndex="2" w="max-content" mb="16px" borderRadius="60px">
             <Flex
@@ -249,7 +267,7 @@ export default function Chat() {
           </Accordion>
         </Flex>
 
-        {/* ✅ messages scroll area */}
+        {/* ✅ Messages (зөвхөн энэ хэсэг scroll хийнэ) */}
         <Flex
           direction="column"
           w="100%"
@@ -257,7 +275,7 @@ export default function Chat() {
           minH="0"
           overflowY="auto"
           px={{ base: '4px', md: '10px' }}
-          pb="120px"
+          pb="160px" // ✅ доорхи fixed/absolute input барын зай
         >
           {messages.length === 0 ? (
             <Flex direction="column" align="center" justify="center" mt="30px" opacity={0.9}>
@@ -286,7 +304,11 @@ export default function Chat() {
                     minW="36px"
                     mt="2px"
                   >
-                    <Icon as={isUser ? MdPerson : MdAutoAwesome} boxSize="18px" color={isUser ? BRAND : 'white'} />
+                    <Icon
+                      as={isUser ? MdPerson : MdAutoAwesome}
+                      boxSize="18px"
+                      color={isUser ? BRAND : 'white'}
+                    />
                   </Flex>
 
                   {/* bubble */}
@@ -334,11 +356,13 @@ export default function Chat() {
           <Box ref={bottomRef} />
         </Flex>
 
-        {/* ✅ input bar fixed in-page */}
+        {/* ✅ INPUT BAR: чатны стандарт шийдэл (sticky биш -> absolute) */}
         <Flex
-          position="sticky"
+          position="absolute"
+          left="0"
+          right="0"
           bottom="0"
-          zIndex={10}
+          zIndex={50}
           bg={useColorModeValue('white', 'navy.900')}
           borderTop="1px solid"
           borderColor={borderColor}
@@ -388,7 +412,7 @@ export default function Chat() {
           </Flex>
         </Flex>
 
-        {/* Footer-оо буцаая гэвэл энд үзүүлж болно */}
+        {/* Footer хэрэгтэй бол display="flex" болгоод ашиглаж болно */}
         <Flex justify="center" mt="14px" alignItems="center" display="none">
           <Text fontSize="xs" color={gray}>
             Free Research Preview...
