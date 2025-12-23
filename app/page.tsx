@@ -327,199 +327,130 @@ export default function Chat() {
         >
           {messages.map((msg) => {
             const isUser = msg.role === 'user';
+return (
+  <Flex
+    w="100%"
+    minH="100dvh"
+    direction="column"
+    position="relative"
+    overflow="hidden"
+    pt={{ base: '70px', md: '0px' }}
+  >
+    {/* BG */}
+    <Img
+      src={Bg}
+      position="absolute"
+      w="350px"
+      left="50%"
+      top="50%"
+      transform="translate(-50%, -50%)"
+      opacity={0.9}
+      pointerEvents="none"
+    />
 
-            return (
-              <Flex
-                key={msg.id}
-                w="100%"
-                justify={isUser ? 'flex-end' : 'flex-start'}
-                mb="12px"
-              >
-                <Flex
-                  maxW={{ base: '92%', md: '75%' }}
-                  align="flex-start"
-                  gap="10px"
-                >
-                  {/* left icon */}
-                  {!isUser && (
-                    <Flex
-                      borderRadius="full"
-                      justify="center"
-                      align="center"
-                      bg="linear-gradient(15.46deg, #4A25E1 26.3%, #7B5AFF 86.4%)"
-                      h="40px"
-                      w="40px"
-                      minW="40px"
-                      mt="2px"
-                    >
-                      <Icon as={MdAutoAwesome} width="20px" height="20px" color="white" />
-                    </Flex>
-                  )}
+    {/* Main container */}
+    <Flex
+      direction="column"
+      mx="auto"
+      w="100%"
+      flex="1"
+      maxW="1000px"
+      position="relative"
+      zIndex={1}
+      px={{ base: 2, md: 0 }}
+    >
+      {/* Model Change (header хэсэг) */}
+      <Flex direction="column" w="100%" mb="12px">
+        {/* ... (ТАНЫ Model selector + Accordion хэвээр) ... */}
+      </Flex>
 
-                  {/* bubble */}
-                  <Flex
-                    direction="column"
-                    p="16px 18px"
-                    border="1px solid"
-                    borderColor={borderColor}
-                    borderRadius="16px"
-                    bg={isUser ? buttonBg : 'transparent'}
-                    position="relative"
-                  >
-                    <Text
-                      color={textColor}
-                      fontWeight="600"
-                      fontSize={{ base: 'sm', md: 'md' }}
-                      lineHeight={{ base: '24px', md: '26px' }}
-                      whiteSpace="pre-wrap"
-                      wordBreak="break-word"
-                    >
-                      {msg.content}
-                    </Text>
+      {/* ✅ Messages: зөвхөн энэ хэсэг scroll хийнэ */}
+      <Flex
+        direction="column"
+        w="100%"
+        flex="1"
+        overflowY="auto"
+        px={{ base: '6px', md: '10px' }}
+        pb="130px" // fixed input + safe-area зай
+      >
+        {messages.map(/* ... яг хэвээр ... */)}
+        <Box ref={bottomRef} />
 
-                    {/* actions */}
-                    <Flex mt="10px" gap="10px" justify="flex-end">
-                      {isUser && (
-                        <Tooltip label="Edit" hasArrow>
-                          <Box
-                            cursor="pointer"
-                            onClick={() => setInputCode(msg.content)}
-                            opacity={0.85}
-                            _hover={{ opacity: 1 }}
-                          >
-                            <Icon as={MdEdit} width="18px" height="18px" color={gray} />
-                          </Box>
-                        </Tooltip>
-                      )}
-
-                      <Tooltip label="Copy" hasArrow>
-                        <Box
-                          cursor="pointer"
-                          onClick={() => copyToClipboard(msg.content)}
-                          opacity={0.85}
-                          _hover={{ opacity: 1 }}
-                        >
-                          <Icon
-                            as={MdContentCopy}
-                            width="18px"
-                            height="18px"
-                            color={gray}
-                          />
-                        </Box>
-                      </Tooltip>
-                    </Flex>
-                  </Flex>
-
-                  {/* right icon */}
-                  {isUser && (
-                    <Flex
-                      borderRadius="full"
-                      justify="center"
-                      align="center"
-                      bg="transparent"
-                      border="1px solid"
-                      borderColor={borderColor}
-                      h="40px"
-                      w="40px"
-                      minW="40px"
-                      mt="2px"
-                    >
-                      <Icon as={MdPerson} width="20px" height="20px" color={brandColor} />
-                    </Flex>
-                  )}
-                </Flex>
-              </Flex>
-            );
-          })}
-
-          {/* scroll anchor */}
-          <Box ref={bottomRef} />
-        </Flex>
-
-        {/* ✅ Sticky Input (доор алга болохгүй) */}
-        <Flex
-          position="sticky"
-          bottom="0"
-          zIndex={5}
-          bg={useColorModeValue('white', 'navy.900')}
-          borderTop="1px solid"
-          borderColor={borderColor}
-          px={{ base: '6px', md: '10px' }}
-          py="12px"
-        >
-          <Flex w="100%" ms={{ base: '0px', xl: '60px' }}>
-            <Input
-              value={inputCode} // ✅ controlled => submit дараа хоосорно
-              onChange={(e) => setInputCode(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (!loading) sendMessage();
-                }
-              }}
-              minH="54px"
-              h="54px"
-              border="1px solid"
-              borderColor={borderColor}
-              borderRadius="45px"
-              p="15px 20px"
-              me="10px"
-              fontSize="sm"
-              fontWeight="500"
-              _focus={{ borderColor: 'none' }}
-              color={inputColor}
-              _placeholder={placeholderColor}
-              placeholder="Type your message here..."
-              isDisabled={loading}
-            />
-
-            <Button
-              variant="primary"
-              py="20px"
-              px="16px"
-              fontSize="sm"
-              borderRadius="45px"
-              ms="auto"
-              w={{ base: '160px', md: '210px' }}
-              h="54px"
-              _hover={{
-                boxShadow:
-                  '0px 21px 27px -10px rgba(96, 60, 255, 0.48) !important',
-                bg: 'linear-gradient(15.46deg, #4A25E1 26.3%, #7B5AFF 86.4%) !important',
-                _disabled: {
-                  bg: 'linear-gradient(15.46deg, #4A25E1 26.3%, #7B5AFF 86.4%)',
-                },
-              }}
-              onClick={() => !loading && sendMessage()}
-              isLoading={loading}
-            >
-              Submit
-            </Button>
-          </Flex>
-        </Flex>
-
+        {/* ✅ Доорхи "Free Research Preview" ийг footer маягаар messages дотор үлдээнэ (хүсвэл бүр устгаж болно) */}
         <Flex
           justify="center"
-          mt="20px"
+          mt="16px"
           direction={{ base: 'column', md: 'row' }}
           alignItems="center"
+          gap="6px"
+          opacity={0.8}
         >
           <Text fontSize="xs" textAlign="center" color={gray}>
-            Free Research Preview. ChatGPT may produce inaccurate information about
-            people, places, or facts.
+            Free Research Preview. ChatGPT may produce inaccurate information about people, places, or facts.
           </Text>
           <Link href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes">
-            <Text
-              fontSize="xs"
-              color={textColor}
-              fontWeight="500"
-              textDecoration="underline"
-            >
+            <Text fontSize="xs" color={textColor} fontWeight="500" textDecoration="underline">
               ChatGPT May 12 Version
             </Text>
           </Link>
         </Flex>
       </Flex>
     </Flex>
-  );
-}
+
+    {/* ✅ Input: үргэлж ёроолд FIXED (desktop + mobile keyboard safe) */}
+    <Flex
+      position="fixed"
+      left="0"
+      right="0"
+      bottom="0"
+      zIndex={50}
+      bg={useColorModeValue('white', 'navy.900')}
+      borderTop="1px solid"
+      borderColor={borderColor}
+      px={{ base: '10px', md: '16px' }}
+      pt="12px"
+      pb="calc(env(safe-area-inset-bottom) + 12px)"
+    >
+      <Flex w="100%" maxW="1000px" mx="auto">
+        <Input
+          value={inputCode}
+          onChange={(e) => setInputCode(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              if (!loading) sendMessage();
+            }
+          }}
+          minH="54px"
+          h="54px"
+          border="1px solid"
+          borderColor={borderColor}
+          borderRadius="45px"
+          p="15px 20px"
+          me="10px"
+          fontSize="sm"
+          fontWeight="500"
+          _focus={{ borderColor: 'none' }}
+          color={inputColor}
+          _placeholder={placeholderColor}
+          placeholder="Type your message here..."
+          isDisabled={loading}
+        />
+
+        <Button
+          variant="primary"
+          px="16px"
+          fontSize="sm"
+          borderRadius="45px"
+          w={{ base: '140px', md: '210px' }}
+          h="54px"
+          onClick={() => !loading && sendMessage()}
+          isLoading={loading}
+        >
+          Submit
+        </Button>
+      </Flex>
+    </Flex>
+  </Flex>
+);
+        
