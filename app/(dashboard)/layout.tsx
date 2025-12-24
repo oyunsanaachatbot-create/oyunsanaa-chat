@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { Box, Portal, useDisclosure } from '@chakra-ui/react';
 import routes from '@/routes';
 import Sidebar from '@/components/sidebar/Sidebar';
@@ -11,21 +11,26 @@ import { usePathname } from 'next/navigation';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [apiKey, setApiKey] = useState('');
   const { onOpen } = useDisclosure();
+
+  useEffect(() => {
+    const initialKey = localStorage.getItem('apiKey');
+    if (initialKey?.includes('sk-') && apiKey !== initialKey) setApiKey(initialKey);
+  }, [apiKey]);
 
   const hideFooter = pathname?.startsWith('/chat');
 
   return (
     <Box>
-      {/* ✅ setApiKey бүү дамжуул (SideBar чинь ихэнхдээ хэрэглэхгүй, алдаа үүсгэдэг) */}
-      <Sidebar routes={routes ?? []} />
+      <Sidebar setApiKey={setApiKey} routes={routes} />
 
       <Box
         pt={{ base: '60px', md: '100px' }}
         float="right"
         minH="100dvh"
         h="100dvh"
-        overflow="hidden"
+        overflow="hidden" // ✅ хамгийн чухал: outer scroll унтраана
         position="relative"
         w={{ base: '100%', xl: 'calc(100% - 290px)' }}
         maxW={{ base: '100%', xl: 'calc(100% - 290px)' }}
@@ -33,6 +38,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <Portal>
           <Box>
             <Navbar
+              setApiKey={setApiKey}
               onOpen={onOpen}
               logoText={'oyunsanaa'}
               brandText={getActiveRoute(routes, pathname)}
