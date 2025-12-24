@@ -20,11 +20,11 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MENU_CONFIG } from '@/config/menu.config';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function Links() {
   const pathname = usePathname();
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   const brand = '#1F6FB2';
 
@@ -32,47 +32,44 @@ export default function Links() {
   const inactiveText = useColorModeValue('gray.600', 'gray.400');
   const divider = useColorModeValue('gray.200', 'whiteAlpha.200');
 
-  // ✅ зөвхөн эхний group нээлттэй
-  const [openIndexes, setOpenIndexes] = useState<number[]>([0]);
+  // ✅ 1) БҮГД ХААЛТТАЙ ЭХЭЛНЭ
+  const [openIndexes, setOpenIndexes] = useState<number[]>([]);
 
-  // ✅ sidebar-ийн хоосон газар дарвал бүгд хаагдана
+  // ✅ Chakra onChange normalize (number | number[])
+  const setFromChakra = (v: number | number[]) => {
+    const arr = Array.isArray(v) ? v : [v];
+    setOpenIndexes(arr.filter((n) => typeof n === 'number'));
+  };
+
+  // ✅ 2) Sidebar-аас ГАДУУР (main дэлгэц) дарвал бүгд хаагдана
   useEffect(() => {
-    const onDocMouseDown = (e: MouseEvent) => {
-      const el = containerRef.current;
-      if (!el) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const el = rootRef.current;
+      const target = e.target as Node | null;
+      if (!el || !target) return;
 
-      // Sidebar menu дотор click болсон эсэх
-      const clickedInside = el.contains(e.target as Node);
-      if (!clickedInside) return;
-
-      // AccordionButton эсвэл link дээр дарсан бол хаахгүй (toggle эсвэл nav хийх ёстой)
-      const target = e.target as HTMLElement;
-      const isHeaderClick = !!target.closest('[data-acc-btn="1"]');
-      const isLinkClick = !!target.closest('a');
-
-      if (!isHeaderClick && !isLinkClick) {
-        setOpenIndexes([]); // бүгд хаах
+      const clickedInsideSidebarMenu = el.contains(target);
+      if (!clickedInsideSidebarMenu) {
+        setOpenIndexes([]); // ✅ бүгд хаах
       }
     };
 
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
   }, []);
 
+  const openSet = useMemo(() => new Set(openIndexes), [openIndexes]);
+
   return (
-    <Box ref={containerRef}>
-      <Accordion
-        allowMultiple
-        index={openIndexes}
-        onChange={(v) => setOpenIndexes(Array.isArray(v) ? v : [v])}
-      >
+    <Box ref={rootRef}>
+      <Accordion allowMultiple index={openIndexes} onChange={setFromChakra}>
         {MENU_CONFIG.map((group, idx) => {
           const GroupIcon = group.icon;
+          const isOpen = openSet.has(idx);
 
           return (
             <AccordionItem key={group.id} border="none" pb="8px">
               <AccordionButton
-                data-acc-btn="1"
                 px="12px"
                 py="10px"
                 borderRadius="12px"
@@ -81,7 +78,7 @@ export default function Links() {
               >
                 <Flex w="100%" align="center" justify="space-between">
                   <HStack spacing="10px">
-                    <Box color={brand}>
+                    <Box color={brand} opacity={isOpen ? 1 : 0.9}>
                       <Icon as={GroupIcon} w="18px" h="18px" />
                     </Box>
                     <Text fontWeight="700" fontSize="sm" color={activeText}>
