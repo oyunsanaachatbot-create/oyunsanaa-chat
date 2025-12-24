@@ -1,28 +1,12 @@
-'use client';
+import { Suspense } from 'react';
+import CallbackClient from './CallbackClient';
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase/browser';
+export const dynamic = 'force-dynamic';
 
-export default function AuthCallbackPage() {
-  const router = useRouter();
-  const sp = useSearchParams();
-
-  useEffect(() => {
-    const run = async () => {
-      const next = sp.get('next') || '/chat';
-
-      // Supabase OAuth: code-г session болгож солино
-      const code = sp.get('code');
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
-      }
-
-      router.replace(next);
-    };
-
-    run();
-  }, [router, sp]);
-
-  return null;
+export default function Page() {
+  return (
+    <Suspense fallback={<div style={{ padding: 24 }}>Signing you in…</div>}>
+      <CallbackClient />
+    </Suspense>
+  );
 }
