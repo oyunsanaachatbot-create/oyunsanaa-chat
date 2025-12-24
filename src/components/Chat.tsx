@@ -23,6 +23,8 @@ import {
   MdEdit,
   MdPerson,
   MdSend,
+  MdThumbDownOffAlt,
+  MdThumbUpOffAlt,
 } from 'react-icons/md';
 
 const Bg = '/img/chat/bg-image.png';
@@ -42,27 +44,39 @@ export default function Chat() {
 
   const maxLen = useMemo(() => 4000, []);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-
-  // input autosize control
   const taRef = useRef<HTMLTextAreaElement | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const textColor = useColorModeValue('navy.800', 'white');
   const subText = useColorModeValue('gray.500', 'whiteAlpha.700');
   const pageBg = useColorModeValue('white', 'navy.900');
+  const panelBg = useColorModeValue('white', 'whiteAlpha.50');
+  const previewBg = useColorModeValue('gray.50', 'whiteAlpha.50');
 
   const userBubbleBg = useColorModeValue('white', 'whiteAlpha.100');
-  const assistantTextBg = 'transparent';
 
+  // Scroll to bottom on new message / streaming
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages.length, loading]);
 
+  // autosize textarea (SDK/GPT style)
+  const autosize = () => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = '0px';
+    const next = Math.min(el.scrollHeight, 140);
+    el.style.height = `${next}px`;
+  };
+
   useEffect(() => {
-    // cleanup preview url
+    autosize();
+  }, [input]);
+
+  // cleanup preview url
+  useEffect(() => {
     return () => {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
     };
@@ -81,16 +95,10 @@ export default function Chat() {
     }
   };
 
-  const pickImage = () => {
-    if (loading) return;
-    fileRef.current?.click();
-  };
-
   const onFileChange = (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) return;
 
-    // size limit 5MB
     if (file.size > 5 * 1024 * 1024) {
       alert('Зураг хэт том байна (5MB-с бага байгаарай).');
       return;
@@ -105,28 +113,17 @@ export default function Chat() {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageFile(null);
     setImagePreview('');
-    if (fileRef.current) fileRef.current.value = '';
+    const inputEl = document.getElementById('oy-attach-input') as HTMLInputElement | null;
+    if (inputEl) inputEl.value = '';
   };
-
-  // Textarea autosize (SDK style)
-  const autosize = () => {
-    const el = taRef.current;
-    if (!el) return;
-    el.style.height = '0px';
-    const next = Math.min(el.scrollHeight, 140); // max ~6 lines
-    el.style.height = `${next}px`;
-  };
-
-  useEffect(() => {
-    autosize();
-  }, [input]);
 
   const send = async () => {
     const trimmed = input.trim();
     const hasText = !!trimmed;
     const hasImage = !!imageFile;
 
-    if ((!hasText && !hasImage) || loading) return;
+    if (loading) return;
+    if (!hasText && !hasImage) return;
     if (hasText && trimmed.length > maxLen) return;
 
     const userId = crypto.randomUUID();
@@ -151,7 +148,6 @@ export default function Chat() {
     try {
       let res: Response;
 
-      // image -> FormData, text only -> JSON
       if (hasImage) {
         const fd = new FormData();
         fd.append('model', model);
@@ -198,7 +194,7 @@ export default function Chat() {
 
   return (
     <Flex direction="column" h="100dvh" w="100%" bg={pageBg}>
-      {/* background mark */}
+      {/* watermark */}
       <Img
         src={Bg}
         position="fixed"
@@ -211,7 +207,7 @@ export default function Chat() {
         zIndex={0}
       />
 
-      {/* Messages area */}
+      {/* Messages */}
       <Flex
         ref={scrollRef}
         direction="column"
@@ -245,7 +241,7 @@ export default function Chat() {
                   align="flex-start"
                   gap="10px"
                 >
-                  {/* assistant avatar (left only) */}
+                  {/* assistant avatar left */}
                   {!isUser && (
                     <Flex
                       borderRadius="full"
@@ -267,7 +263,7 @@ export default function Chat() {
                     direction="column"
                     maxW={isUser ? '720px' : '860px'}
                     w="100%"
-                    bg={isUser ? userBubbleBg : assistantTextBg}
+                    bg={isUser ? userBubbleBg : 'transparent'} // assistant = no box
                     border={isUser ? '1px solid' : 'none'}
                     borderColor={isUser ? borderColor : 'transparent'}
                     borderRadius={isUser ? '18px' : '0px'}
@@ -285,7 +281,7 @@ export default function Chat() {
                       {m.content}
                     </Text>
 
-                    {/* small actions (SDK-like) */}
+                    {/* actions */}
                     <Flex
                       mt={isUser ? '8px' : '6px'}
                       justify={isUser ? 'flex-end' : 'flex-start'}
@@ -295,46 +291,98 @@ export default function Chat() {
                       _groupHover={{ opacity: 1 }}
                       sx={{ '@media (hover: none)': { opacity: 1 } }}
                     >
-                      {isUser && (
-                        <Tooltip label="Засах" hasArrow>
-                          <Button
-                            variant="ghost"
-                            minW="28px"
-                            w="28px"
-                            h="28px"
-                            p="0"
-                            borderRadius="999px"
-                            onClick={() => {
-                              setInput(m.content);
-                              setTimeout(() => taRef.current?.focus(), 0);
-                            }}
-                            _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
-                            _active={{ bg: 'rgba(31,111,178,0.14)' }}
-                          >
-                            <Icon as={MdEdit} boxSize="14px" color={subText} />
-                          </Button>
-                        </Tooltip>
-                      )}
+                      {isUser ? (
+                        <>
+                          <Tooltip label="Засах" hasArrow>
+                            <Button
+                              variant="ghost"
+                              minW="28px"
+                              w="28px"
+                              h="28px"
+                              p="0"
+                              borderRadius="999px"
+                              onClick={() => {
+                                setInput(m.content);
+                                setTimeout(() => taRef.current?.focus(), 0);
+                              }}
+                              _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
+                              _active={{ bg: 'rgba(31,111,178,0.14)' }}
+                            >
+                              <Icon as={MdEdit} boxSize="14px" color={subText} />
+                            </Button>
+                          </Tooltip>
 
-                      <Tooltip label="Хуулах" hasArrow>
-                        <Button
-                          variant="ghost"
-                          minW="28px"
-                          w="28px"
-                          h="28px"
-                          p="0"
-                          borderRadius="999px"
-                          onClick={() => copyToClipboard(m.content)}
-                          _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
-                          _active={{ bg: 'rgba(31,111,178,0.14)' }}
-                        >
-                          <Icon as={MdContentCopy} boxSize="14px" color={subText} />
-                        </Button>
-                      </Tooltip>
+                          <Tooltip label="Хуулах" hasArrow>
+                            <Button
+                              variant="ghost"
+                              minW="28px"
+                              w="28px"
+                              h="28px"
+                              p="0"
+                              borderRadius="999px"
+                              onClick={() => copyToClipboard(m.content)}
+                              _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
+                              _active={{ bg: 'rgba(31,111,178,0.14)' }}
+                            >
+                              <Icon as={MdContentCopy} boxSize="14px" color={subText} />
+                            </Button>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <>
+                          <Tooltip label="Хуулах" hasArrow>
+                            <Button
+                              variant="ghost"
+                              minW="28px"
+                              w="28px"
+                              h="28px"
+                              p="0"
+                              borderRadius="999px"
+                              onClick={() => copyToClipboard(m.content)}
+                              _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
+                              _active={{ bg: 'rgba(31,111,178,0.14)' }}
+                            >
+                              <Icon as={MdContentCopy} boxSize="14px" color={subText} />
+                            </Button>
+                          </Tooltip>
+
+                          <Tooltip label="Таалагдлаа" hasArrow>
+                            <Button
+                              variant="ghost"
+                              minW="28px"
+                              w="28px"
+                              h="28px"
+                              p="0"
+                              borderRadius="999px"
+                              onClick={() => console.log('like', m.id)}
+                              _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
+                              _active={{ bg: 'rgba(31,111,178,0.14)' }}
+                            >
+                              <Icon as={MdThumbUpOffAlt} boxSize="14px" color={subText} />
+                            </Button>
+                          </Tooltip>
+
+                          <Tooltip label="Таалагдсангүй" hasArrow>
+                            <Button
+                              variant="ghost"
+                              minW="28px"
+                              w="28px"
+                              h="28px"
+                              p="0"
+                              borderRadius="999px"
+                              onClick={() => console.log('dislike', m.id)}
+                              _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
+                              _active={{ bg: 'rgba(31,111,178,0.14)' }}
+                            >
+                              <Icon as={MdThumbDownOffAlt} boxSize="14px" color={subText} />
+                            </Button>
+                          </Tooltip>
+                        </>
+                      )}
                     </Flex>
                   </Flex>
 
-                  {/* user avatar (right) */}
+                  {/* user avatar right */}
                   {isUser && (
                     <Flex
                       borderRadius="full"
@@ -357,7 +405,7 @@ export default function Chat() {
         </Flex>
       </Flex>
 
-      {/* Composer (SDK style) */}
+      {/* Composer */}
       <Box
         position="sticky"
         bottom="0"
@@ -367,8 +415,16 @@ export default function Chat() {
         bg={pageBg}
         pb="calc(env(safe-area-inset-bottom) + 12px)"
       >
-        <Flex w="100%" maxW="920px" mx="auto" px={{ base: '14px', md: '0px' }} py="12px" direction="column" gap="10px">
-          {/* attachment preview (standard: above input) */}
+        <Flex
+          w="100%"
+          maxW="920px"
+          mx="auto"
+          px={{ base: '14px', md: '0px' }}
+          py="12px"
+          direction="column"
+          gap="10px"
+        >
+          {/* preview ABOVE input (standard) */}
           {imagePreview && (
             <Flex
               align="center"
@@ -377,7 +433,7 @@ export default function Chat() {
               borderColor={borderColor}
               borderRadius="16px"
               p="8px"
-              bg={useColorModeValue('gray.50', 'whiteAlpha.50')}
+              bg={previewBg}
             >
               <Flex align="center" gap="10px" minW={0}>
                 <Box
@@ -421,33 +477,36 @@ export default function Chat() {
             py="10px"
             align="flex-end"
             gap="8px"
-            bg={useColorModeValue('white', 'whiteAlpha.50')}
+            bg={panelBg}
           >
-            {/* hidden file input */}
+            {/* REAL file input (works reliably) */}
             <input
-              ref={fileRef}
+              id="oy-attach-input"
               type="file"
               accept="image/*"
               style={{ display: 'none' }}
               onChange={(e) => onFileChange(e.target.files?.[0] || null)}
             />
 
-            <Tooltip label="Зураг хавсаргах" hasArrow>
-              <IconButton
-                aria-label="attach"
-                icon={<Icon as={MdAttachFile} />}
-                onClick={pickImage}
-                isDisabled={loading}
-                variant="ghost"
-                borderRadius="14px"
-                h="40px"
-                w="40px"
-                _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
-                _active={{ bg: 'rgba(31,111,178,0.14)' }}
-              />
+            {/* Attach button uses label htmlFor (MOST reliable) */}
+            <Tooltip label="Зураг" hasArrow>
+              <Box as="label" htmlFor="oy-attach-input" m="0" cursor={loading ? 'not-allowed' : 'pointer'}>
+                <IconButton
+                  aria-label="attach"
+                  icon={<Icon as={MdAttachFile} />}
+                  isDisabled={loading}
+                  variant="ghost"
+                  borderRadius="14px"
+                  h="40px"
+                  w="40px"
+                  pointerEvents="none" // click is handled by the label
+                  _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
+                  _active={{ bg: 'rgba(31,111,178,0.14)' }}
+                />
+              </Box>
             </Tooltip>
 
-            {/* textarea (autosize + scroll after max) */}
+            {/* Textarea */}
             <Textarea
               ref={taRef}
               value={input}
@@ -475,6 +534,7 @@ export default function Chat() {
               }}
             />
 
+            {/* Send icon only */}
             <Tooltip label="Илгээх" hasArrow>
               <IconButton
                 aria-label="send"
@@ -491,10 +551,6 @@ export default function Chat() {
               />
             </Tooltip>
           </Flex>
-
-          <Text fontSize="xs" color={subText} textAlign="center">
-            Enter = илгээх · Shift+Enter = шинэ мөр
-          </Text>
         </Flex>
       </Box>
     </Flex>
