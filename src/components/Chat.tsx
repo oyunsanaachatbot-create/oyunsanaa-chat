@@ -55,7 +55,7 @@ export default function Chat() {
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const textColor = useColorModeValue('navy.800', 'white');
   const subText = useColorModeValue('gray.500', 'whiteAlpha.700');
-  const pageBg = useColorModeValue('white', 'navy.900	or'); // safe fallback below
+ const pageBg = useColorModeValue('white', 'navy.900');
   const safePageBg = useColorModeValue('white', 'navy.900');
   const composerBg = useColorModeValue('white', 'whiteAlpha.50');
   const hintBg = useColorModeValue('blackAlpha.800', 'whiteAlpha.200');
