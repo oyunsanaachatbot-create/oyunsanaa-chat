@@ -22,8 +22,6 @@ import {
   MdEdit,
   MdPerson,
   MdSend,
-  MdThumbDownOffAlt,
-  MdThumbUpOffAlt,
 } from 'react-icons/md';
 
 const Bg = '/img/chat/bg-image.png';
@@ -37,7 +35,7 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // image attachment
+  // attachment
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
 
@@ -51,6 +49,13 @@ export default function Chat() {
   const subText = useColorModeValue('gray.500', 'whiteAlpha.700');
   const pageBg = useColorModeValue('white', 'navy.900');
   const composerBg = useColorModeValue('white', 'whiteAlpha.50');
+
+  // always keep input focus when ready (fix "mouse click to activate")
+  useEffect(() => {
+    if (loading) return;
+    const t = window.setTimeout(() => taRef.current?.focus(), 0);
+    return () => window.clearTimeout(t);
+  }, [loading, messages.length]);
 
   // scroll bottom
   useEffect(() => {
@@ -97,7 +102,6 @@ export default function Chat() {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
-    toast({ title: 'Зураг нэмэгдлээ', status: 'success', duration: 900, position: 'top' });
   };
 
   const clearImage = () => {
@@ -121,11 +125,7 @@ export default function Chat() {
     const assistantId = crypto.randomUUID();
 
     const userContent =
-      hasText && hasImage
-        ? `${trimmed}\n\n[Зураг хавсаргасан]`
-        : hasImage
-          ? `[Зураг хавсаргасан]`
-          : trimmed;
+      hasText && hasImage ? `${trimmed}\n\n[Зураг хавсаргасан]` : hasImage ? `[Зураг хавсаргасан]` : trimmed;
 
     setMessages((p) => [
       ...p,
@@ -176,13 +176,12 @@ export default function Chat() {
       }
     } finally {
       setLoading(false);
-      setTimeout(() => taRef.current?.focus(), 0);
+      taRef.current?.focus();
     }
   };
 
   return (
     <Flex direction="column" h="100dvh" w="100%" bg={pageBg}>
-      {/* watermark */}
       <Img
         src={Bg}
         position="fixed"
@@ -204,7 +203,7 @@ export default function Chat() {
         overflowY="auto"
         zIndex={1}
         px={{ base: '14px', md: '0px' }}
-        pt={{ base: '90px', md: '18px' }} // mobile дээр header давхцахаас хамгаална
+        pt={{ base: '90px', md: '18px' }}
         pb="18px"
       >
         <Flex direction="column" mx="auto" w="100%" maxW="920px" gap="14px">
@@ -229,7 +228,6 @@ export default function Chat() {
                   align="flex-start"
                   gap="10px"
                 >
-                  {/* assistant avatar */}
                   {!isUser && (
                     <Flex
                       borderRadius="full"
@@ -245,7 +243,7 @@ export default function Chat() {
                     </Flex>
                   )}
 
-                  {/* ✅ message body: HOЁУЛАА хайрцаггүй */}
+                  {/* clean, no box */}
                   <Flex role="group" direction="column" maxW="860px" w="100%">
                     <Text
                       color={textColor}
@@ -268,60 +266,30 @@ export default function Chat() {
                       _groupHover={{ opacity: 1 }}
                       sx={{ '@media (hover: none)': { opacity: 1 } }}
                     >
-                      {isUser ? (
-                        <>
-                          <IconButton
-                            aria-label="edit"
-                            icon={<Icon as={MdEdit} />}
-                            variant="ghost"
-                            size="sm"
-                            borderRadius="999px"
-                            onClick={() => {
-                              setInput(m.content);
-                              setTimeout(() => taRef.current?.focus(), 0);
-                            }}
-                          />
-                          <IconButton
-                            aria-label="copy"
-                            icon={<Icon as={MdContentCopy} />}
-                            variant="ghost"
-                            size="sm"
-                            borderRadius="999px"
-                            onClick={() => copyToClipboard(m.content)}
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <IconButton
-                            aria-label="copy"
-                            icon={<Icon as={MdContentCopy} />}
-                            variant="ghost"
-                            size="sm"
-                            borderRadius="999px"
-                            onClick={() => copyToClipboard(m.content)}
-                          />
-                          <IconButton
-                            aria-label="like"
-                            icon={<Icon as={MdThumbUpOffAlt} />}
-                            variant="ghost"
-                            size="sm"
-                            borderRadius="999px"
-                            onClick={() => console.log('like', m.id)}
-                          />
-                          <IconButton
-                            aria-label="dislike"
-                            icon={<Icon as={MdThumbDownOffAlt} />}
-                            variant="ghost"
-                            size="sm"
-                            borderRadius="999px"
-                            onClick={() => console.log('dislike', m.id)}
-                          />
-                        </>
+                      {isUser && (
+                        <IconButton
+                          aria-label="edit"
+                          icon={<Icon as={MdEdit} />}
+                          variant="ghost"
+                          size="sm"
+                          borderRadius="999px"
+                          onClick={() => {
+                            setInput(m.content);
+                            taRef.current?.focus();
+                          }}
+                        />
                       )}
+                      <IconButton
+                        aria-label="copy"
+                        icon={<Icon as={MdContentCopy} />}
+                        variant="ghost"
+                        size="sm"
+                        borderRadius="999px"
+                        onClick={() => copyToClipboard(m.content)}
+                      />
                     </Flex>
                   </Flex>
 
-                  {/* user avatar */}
                   {isUser && (
                     <Flex
                       borderRadius="full"
@@ -365,8 +333,9 @@ export default function Chat() {
             align="flex-end"
             gap="8px"
             bg={composerBg}
+            onMouseDown={() => taRef.current?.focus()} // anywhere in composer focuses input
           >
-            {/* hidden file input (✅ label htmlFor = 100% ажиллана) */}
+            {/* hidden input */}
             <input
               id="oy-attach-input"
               type="file"
@@ -375,6 +344,7 @@ export default function Chat() {
               onChange={(e) => onFileChange(e.target.files?.[0] || null)}
             />
 
+            {/* attach (label is reliable) */}
             <Box as="label" htmlFor="oy-attach-input" m="0" cursor={loading ? 'not-allowed' : 'pointer'}>
               <IconButton
                 aria-label="attach"
@@ -388,7 +358,7 @@ export default function Chat() {
               />
             </Box>
 
-            {/* tiny preview inside composer */}
+            {/* preview inside composer (standard) */}
             {imagePreview && (
               <Box
                 position="relative"
