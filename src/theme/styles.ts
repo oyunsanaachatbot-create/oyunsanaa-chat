@@ -1,6 +1,8 @@
 import { mode } from '@chakra-ui/theme-tools';
+
 export const globalStyles = {
   colors: {
+    // ✅ colors хэсгийг чинь өөрчлөхгүй (brand чинь хэвээр)
     brand: {
       100: '#E9E3FF',
       200: '#422AFB',
@@ -45,34 +47,13 @@ export const globalStyles = {
       800: '#707EAE',
       900: '#1B2559',
     },
-    red: {
-      100: '#FEEFEE',
-      500: '#EE5D50',
-      600: '#E31A1A',
-    },
-    blue: {
-      50: '#EFF4FB',
-      500: '#3965FF',
-    },
-    orange: {
-      100: '#FFF6DA',
-      500: '#FFB547',
-    },
-    green: {
-      100: '#E6FAF5',
-      500: '#01B574',
-    },
+    red: { 100: '#FEEFEE', 500: '#EE5D50', 600: '#E31A1A' },
+    blue: { 50: '#EFF4FB', 500: '#3965FF' },
+    orange: { 100: '#FFF6DA', 500: '#FFB547' },
+    green: { 100: '#E6FAF5', 500: '#01B574' },
     white: {
-      50: '#ffffff',
-      100: '#ffffff',
-      200: '#ffffff',
-      300: '#ffffff',
-      400: '#ffffff',
-      500: '#ffffff',
-      600: '#ffffff',
-      700: '#ffffff',
-      800: '#ffffff',
-      900: '#ffffff',
+      50: '#ffffff', 100: '#ffffff', 200: '#ffffff', 300: '#ffffff', 400: '#ffffff',
+      500: '#ffffff', 600: '#ffffff', 700: '#ffffff', 800: '#ffffff', 900: '#ffffff',
     },
     navy: {
       50: '#d0dcfb',
@@ -86,23 +67,47 @@ export const globalStyles = {
       800: '#111c44',
       900: '#0b1437',
     },
-    gray: {
-      100: '#FAFCFE',
-    },
+    gray: { 100: '#FAFCFE' },
   },
+
   styles: {
-    global: (props: any) => ({
-      body: {
-        overflowX: 'hidden',
-        bg: mode('#fdfeff', 'navy.900')(props),
-        fontFamily: 'Plus Jakarta Sans',
-      },
-      input: {
-        color: 'gray.700',
-      },
-      html: {
-        fontFamily: 'Plus Jakarta Sans',
-      },
-    }),
+    global: (props: any) => {
+      const isDark = props.colorMode === 'dark';
+
+      return {
+        html: {
+          fontFamily: 'Plus Jakarta Sans',
+        },
+        body: {
+          overflowX: 'hidden',
+          fontFamily: 'Plus Jakarta Sans',
+
+          // ✅ Гол: dark үед solid navy.900 биш, “гэрэлтэй” gradient фон
+          bg: mode('#fdfeff', '#0b1437')(props),
+
+          // ✅ Glow overlay (dark үед л ажиллана)
+          ...(isDark
+            ? {
+                backgroundImage: `
+                  radial-gradient(900px 500px at 20% 10%, rgba(66,42,251,0.35), rgba(0,0,0,0)),
+                  radial-gradient(700px 400px at 80% 0%, rgba(117,81,255,0.25), rgba(0,0,0,0)),
+                  radial-gradient(900px 600px at 50% 100%, rgba(57,101,255,0.12), rgba(0,0,0,0))
+                `,
+                backgroundRepeat: 'no-repeat',
+                backgroundAttachment: 'fixed',
+              }
+            : null),
+
+          // (optional) smooth text
+          WebkitFontSmoothing: 'antialiased',
+          MozOsxFontSmoothing: 'grayscale',
+        },
+
+        // ✅ input color чинь light-д OK, dark-д саарал биш болгоё
+        input: {
+          color: mode('gray.700', 'whiteAlpha.900')(props),
+        },
+      };
+    },
   },
 };
