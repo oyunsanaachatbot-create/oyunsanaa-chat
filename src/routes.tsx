@@ -5,21 +5,14 @@ import { Icon } from "./lib/chakra";
 import type { IRoute } from "./types/navigation";
 
 // Lucide icons (чи хүссэн: menu бүгд icontoi)
-import {
-  Brain,
-  Sparkles,
-  HeartHandshake,
-  Target,
-  HeartPulse,
-  Coffee,
-} from "lucide-react";
+import { MdOutlinePsychology, MdAutoAwesome, MdFavorite, MdFlag, MdHealthAndSafety, MdCoffee } from "react-icons/md";
 
 const routes: IRoute[] = [
   // -------------------- MIND ROOT --------------------
   {
     name: "Оюун ухаан",
     path: "/mind",
-    icon: <Icon as={Brain} width="20px" height="20px" color="inherit" />,
+    icon: <Icon as={MdOutlinePsychology} width="20px" height="20px" color="inherit" />,
     collapse: true,
     items: [
       // -------------------- 1) Emotion Control --------------------
@@ -72,7 +65,7 @@ const routes: IRoute[] = [
         name: "Өөрийгөө ойлгох",
         layout: "/mind",
         path: "/self",
-        icon: <Icon as={Brain} width="18px" height="18px" color="inherit" />,
+        icon: <Icon as={MdAutoAwesome} width="18px" height="18px" color="inherit" />,
         collapse: true,
         items: [
           { name: "Би хэн бэ?", layout: "/mind", path: "/self/identity" },
@@ -112,7 +105,7 @@ const routes: IRoute[] = [
         layout: "/mind",
         path: "/relations",
         icon: (
-          <Icon as={HeartHandshake} width="18px" height="18px" color="inherit" />
+          <Icon as={MdFavorite} width="18px" height="18px" color="inherit" />
         ),
         collapse: true,
         items: [
@@ -166,7 +159,7 @@ const routes: IRoute[] = [
         name: "Зорилго ба утга учир",
         layout: "/mind",
         path: "/purpose",
-        icon: <Icon as={Target} width="18px" height="18px" color="inherit" />,
+        icon: <Icon as={MdFlag} width="18px" height="18px" color="inherit" />,
         collapse: true,
         items: [
           {
@@ -210,7 +203,7 @@ const routes: IRoute[] = [
         layout: "/mind",
         path: "/self-care",
         icon: (
-          <Icon as={HeartPulse} width="18px" height="18px" color="inherit" />
+          <Icon as={MdHealthAndSafety} width="18px" height="18px" color="inherit" />
         ),
         collapse: true,
         items: [
@@ -259,7 +252,7 @@ const routes: IRoute[] = [
         name: "Тогтвортой амьдрал",
         layout: "/mind",
         path: "/life",
-        icon: <Icon as={Coffee} width="18px" height="18px" color="inherit" />,
+        icon: <Icon as={MdCoffee} width="18px" height="18px" color="inherit" />,
         collapse: true,
         items: [
           {
