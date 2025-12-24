@@ -2,36 +2,25 @@
 
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/browser';
+import { supabase } from '@/lib/supabase/browser';
 
 export default function CallbackClient() {
   const router = useRouter();
-  const sp = useSearchParams();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const run = async () => {
-      const code = sp.get('code');
-      const next = sp.get('next') || '/chat';
+      const next = searchParams.get('next') || '/chat';
+      const code = searchParams.get('code');
 
-      // code байхгүй бол зүгээр login руу
-      if (!code) {
-        router.replace('/auth/login');
-        return;
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
       }
-
-      const supabase = createClient();
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-      if (error) {
-        router.replace('/auth/login?error=oauth');
-        return;
-      }
-
       router.replace(next);
     };
 
     run();
-  }, [sp, router]);
+  }, [router, searchParams]);
 
-  return <div style={{ padding: 24 }}>Signing you in…</div>;
+  return null;
 }
