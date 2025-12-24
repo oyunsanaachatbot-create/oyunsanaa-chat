@@ -1,26 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase/browser';
+import { useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-export default function CallbackClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+// энд чинь хуучин login UI component-оо import хийнэ
+// import LoginForm from '@/components/auth/LoginForm';
 
-  useEffect(() => {
-    const run = async () => {
-      const next = searchParams.get('next') || '/chat';
-      const code = searchParams.get('code');
+export default function LoginClient() {
+  const sp = useSearchParams();
 
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
-      }
-      router.replace(next);
-    };
+  const next = useMemo(() => sp.get('next') || '/chat', [sp]);
 
-    run();
-  }, [router, searchParams]);
+  // LoginForm руу next дамжуулах бол:
+  // return <LoginForm next={next} />;
 
-  return null;
+  return (
+    <div style={{ padding: 24 }}>
+      {/* энд existing login UI-гаа render хий */}
+      Login UI here. next = {next}
+    </div>
+  );
 }
