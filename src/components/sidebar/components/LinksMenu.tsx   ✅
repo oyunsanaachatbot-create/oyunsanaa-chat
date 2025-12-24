@@ -1,0 +1,64 @@
+'use client';
+
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Box,
+  Flex,
+  HStack,
+  Icon,
+  List,
+  ListItem,
+  Text,
+  Badge,
+  useColorModeValue,
+} from '@chakra-ui/react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { MENU_CONFIG } from '@/config/menu.config';
+
+export default function LinksMenu() {
+  const pathname = usePathname();
+  const brand = '#1F6FB2';
+
+  return (
+    <Accordion allowMultiple defaultIndex={[0]}>
+      {MENU_CONFIG.map((group) => {
+        const GroupIcon = group.icon;
+
+        return (
+          <AccordionItem key={group.id} border="none">
+            <AccordionButton>
+              <HStack>
+                <Icon as={GroupIcon} />
+                <Text fontWeight="700">{group.label}</Text>
+              </HStack>
+              <AccordionIcon />
+            </AccordionButton>
+
+            <AccordionPanel>
+              <List>
+                {group.items.map((item) => (
+                  <ListItem key={item.id}>
+                    <Box as={Link} href={item.href}>
+                      <Text
+                        color={item.isApp ? brand : 'inherit'}
+                        fontWeight={item.isApp ? '700' : '500'}
+                      >
+                        {item.label}
+                      </Text>
+                      {item.isApp && <Badge bg={brand}>APP</Badge>}
+                    </Box>
+                  </ListItem>
+                ))}
+              </List>
+            </AccordionPanel>
+          </AccordionItem>
+        );
+      })}
+    </Accordion>
+  );
+}
