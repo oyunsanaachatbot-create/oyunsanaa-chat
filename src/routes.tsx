@@ -7,10 +7,9 @@ import {
   FaHandshake,
   FaBullseye,
   FaHeartPulse,
-  FaCoffee,
+  FaMugHot,
   FaDollarSign,
-} from 'react-icons/fa6';
-
+} from 'react-icons/fa';
 export const routes: IRoute[] = [
   {
     name: 'Миний сэтгэлзүй',
