@@ -23,7 +23,11 @@ import { usePathname } from 'next/navigation';
 import { MENU_CONFIG } from '@/config/menu.config';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-export default function Links() {
+export default function Links({
+  onClose,
+}: {
+  onClose?: () => void; // ✅ mobile drawer хаах
+}) {
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -43,13 +47,12 @@ export default function Links() {
     setOpenIndexes(arr.filter((n) => typeof n === 'number'));
   };
 
-  // ✅ sidebar/menu хэсгээс гадуур дарвал бүгд хаах
+  // ✅ Links хэсгээс гадуур дарвал accordion хаах (drawer-ийг хаахгүй)
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
       const el = rootRef.current;
       const target = e.target as Node | null;
       if (!el || !target) return;
-
       if (!el.contains(target)) setOpenIndexes([]);
     };
 
@@ -106,6 +109,8 @@ export default function Links() {
                         <ChakraLink
                           as={NextLink}
                           href={item.href}
+                          // ✅ хамгийн чухал: mobile drawer-ийг шууд хаана
+                          onClick={() => onClose?.()}
                           display="flex"
                           alignItems="center"
                           justifyContent="space-between"
