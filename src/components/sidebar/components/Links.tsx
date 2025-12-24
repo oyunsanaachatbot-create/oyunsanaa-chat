@@ -12,12 +12,13 @@ import {
   Flex,
   HStack,
   Icon,
+  Link as ChakraLink,
   List,
   ListItem,
   Text,
   useColorModeValue,
 } from '@chakra-ui/react';
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MENU_CONFIG } from '@/config/menu.config';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -32,26 +33,22 @@ export default function Links() {
   const inactiveText = useColorModeValue('gray.600', 'gray.400');
   const divider = useColorModeValue('gray.200', 'whiteAlpha.200');
 
-  // ✅ 1) БҮГД ХААЛТТАЙ ЭХЭЛНЭ
+  // ✅ бүгд хаалттай эхэлнэ
   const [openIndexes, setOpenIndexes] = useState<number[]>([]);
 
-  // ✅ Chakra onChange normalize (number | number[])
   const setFromChakra = (v: number | number[]) => {
     const arr = Array.isArray(v) ? v : [v];
     setOpenIndexes(arr.filter((n) => typeof n === 'number'));
   };
 
-  // ✅ 2) Sidebar-аас ГАДУУР (main дэлгэц) дарвал бүгд хаагдана
+  // ✅ sidebar-аас гадуур дарвал бүгд хаах
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
       const el = rootRef.current;
       const target = e.target as Node | null;
       if (!el || !target) return;
 
-      const clickedInsideSidebarMenu = el.contains(target);
-      if (!clickedInsideSidebarMenu) {
-        setOpenIndexes([]); // ✅ бүгд хаах
-      }
+      if (!el.contains(target)) setOpenIndexes([]);
     };
 
     document.addEventListener('pointerdown', onPointerDown);
@@ -104,8 +101,9 @@ export default function Links() {
 
                     return (
                       <ListItem key={item.id}>
-                        <Box
-                          as={Link}
+                        {/* ✅ NEXT LINK + CHAKRA LINK: click 100% ажиллана */}
+                        <ChakraLink
+                          as={NextLink}
                           href={item.href}
                           display="flex"
                           alignItems="center"
@@ -151,7 +149,7 @@ export default function Links() {
                               APP
                             </Badge>
                           ) : null}
-                        </Box>
+                        </ChakraLink>
                       </ListItem>
                     );
                   })}
