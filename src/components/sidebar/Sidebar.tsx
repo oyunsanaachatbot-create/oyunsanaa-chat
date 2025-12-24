@@ -1,234 +1,145 @@
 'use client';
-/* eslint-disable */
+import React, { PropsWithChildren } from 'react';
 
+// chakra imports
 import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
   Box,
   Flex,
-  HStack,
-  Text,
-  List,
+  Drawer,
+  DrawerBody,
   Icon,
-  ListItem,
   useColorModeValue,
+  DrawerOverlay,
+  useDisclosure,
+  DrawerContent,
+  DrawerCloseButton,
 } from '@chakra-ui/react';
-import { FaCircle } from 'react-icons/fa';
-import NavLink from '@/components/link/NavLink';
-import { IRoute } from '@/types/navigation';
-import { PropsWithChildren, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import Content from '@/components/sidebar/components/Content';
+import {
+  renderThumb,
+  renderTrack,
+  renderView,
+} from '@/components/scrollbar/Scrollbar';
+import { Scrollbars } from 'react-custom-scrollbars-2';
 
-interface SidebarLinksProps extends PropsWithChildren {
+import { IoMenuOutline } from 'react-icons/io5';
+import { IRoute } from '@/types/navigation';
+import { isWindowAvailable } from '@/utils/navigation';
+
+export interface SidebarProps extends PropsWithChildren {
   routes: IRoute[];
+  [x: string]: any;
 }
 
-export function SidebarLinks(props: SidebarLinksProps) {
-  const pathname = usePathname();
+function Sidebar(props: SidebarProps) {
+  const { routes, setApiKey } = props;
+  // this is for the rest of the collapses
+  let variantChange = '0.2s linear';
+  let shadow = useColorModeValue(
+    '14px 17px 40px 4px rgba(112, 144, 176, 0.08)',
+    'unset',
+  );
+  // Chakra Color Mode
+  let sidebarBg = useColorModeValue('white', 'navy.800');
+  let sidebarRadius = '14px';
+  let sidebarMargins = '0px';
+  // SIDEBAR
+  return (
+    <Box display={{ base: 'none', xl: 'block' }} position="fixed" minH="100%">
+      <Box
+        bg={sidebarBg}
+        transition={variantChange}
+        w="285px"
+        ms={{
+          sm: '16px',
+        }}
+        my={{
+          sm: '16px',
+        }}
+        h="calc(100vh - 32px)"
+        m={sidebarMargins}
+        borderRadius={sidebarRadius}
+        minH="100%"
+        overflowX="hidden"
+        boxShadow={shadow}
+      >
+        <Scrollbars
+          autoHide
+          renderTrackVertical={renderTrack}
+          renderThumbVertical={renderThumb}
+          renderView={renderView}
+        >
+          <Content setApiKey={setApiKey} routes={routes} />
+        </Scrollbars>
+      </Box>
+    </Box>
+  );
+}
 
-  // ✅ Хуучин theme-ийн өнгөнүүдийг ХӨНДӨХГҮЙ (яг хэвээр)
-  let activeColor = useColorModeValue('navy.700', 'white');
-  let inactiveColor = useColorModeValue('gray.500', 'gray.500');
-  let activeIcon = useColorModeValue('brand.500', 'white');
-  let gray = useColorModeValue('gray.500', 'gray.500');
+// FUNCTIONS
+export function SidebarResponsive(props: { routes: IRoute[] }) {
+  let sidebarBackgroundColor = useColorModeValue('white', 'navy.800');
+  let menuColor = useColorModeValue('gray.400', 'white');
+  // // SIDEBAR
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const { routes } = props;
-
-  const activeRoute = useCallback(
-    (routeName: string) => pathname?.includes(routeName),
-    [pathname],
-  );
-
-  // ✅ Leaf link render (route.collapse биш)
-  const renderLeaf = (route: IRoute, key: number) => {
-    const href = route.layout ? route.layout + route.path : route.path;
-
-    return (
-      <Flex
-        key={key}
-        align="center"
-        justifyContent="space-between"
-        w="100%"
-        maxW="100%"
-        ps="17px"
-        mb="0px"
-      >
-        <HStack
-          w="100%"
-          mb="14px"
-          spacing={activeRoute(route.path.toLowerCase()) ? '22px' : '26px'}
-        >
-          <NavLink href={href} styles={{ width: '100%' }}>
-            <Flex w="100%" alignItems="center" justifyContent="center">
-              {route.icon ? (
-                <Box
-                  color={
-                    activeRoute(route.path.toLowerCase())
-                      ? activeIcon
-                      : inactiveColor
-                  }
-                  me="12px"
-                  mt="6px"
-                >
-                  {route.icon}
-                </Box>
-              ) : null}
-
-              <Text
-                me="auto"
-                color={
-                  activeRoute(route.path.toLowerCase()) ? activeColor : 'gray.500'
-                }
-                fontWeight="500"
-                letterSpacing="0px"
-                fontSize="sm"
-              >
-                {route.name}
-              </Text>
-            </Flex>
-          </NavLink>
-        </HStack>
+  return (
+    <Flex display={{ sm: 'flex', xl: 'none' }} alignItems="center">
+      <Flex w="max-content" h="max-content" onClick={onOpen}>
+        <Icon
+          as={IoMenuOutline}
+          color={menuColor}
+          my="auto"
+          w="20px"
+          h="20px"
+          me="10px"
+          _hover={{ cursor: 'pointer' }}
+        />
       </Flex>
-    );
-  };
-
-  // ✅ Secondary accordion links (bullet style) — одоогийн style-г хэвээр үлдээв
-  const createAccordionLinks = (routes: IRoute[]) => {
-    return routes.map((route: IRoute, key: number) => {
-      return (
-        <ListItem
-          ms="28px"
-          display="flex"
-          alignItems="center"
-          mb="10px"
-          key={key}
+      <Drawer
+        isOpen={isOpen}
+        onClose={onClose}
+        placement={
+          isWindowAvailable() && document.documentElement.dir === 'rtl'
+            ? 'right'
+            : 'left'
+        }
+      >
+        <DrawerOverlay />
+        <DrawerContent
+          w="285px"
+          maxW="285px"
+          ms={{
+            sm: '16px',
+          }}
+          my={{
+            sm: '16px',
+          }}
+          borderRadius="16px"
+          bg={sidebarBackgroundColor}
         >
-          <Icon
-            w="6px"
-            h="6px"
-            me="8px"
-            as={FaCircle}
-            color={activeIcon}
+          <DrawerCloseButton
+            zIndex="3"
+            onClick={onClose}
+            _focus={{ boxShadow: 'none' }}
+            _hover={{ boxShadow: 'none' }}
           />
-          <Text
-            color={
-              activeRoute(route.path.toLowerCase()) ? activeColor : inactiveColor
-            }
-            fontWeight={activeRoute(route.path.toLowerCase()) ? 'bold' : 'normal'}
-            fontSize="sm"
-          >
-            {route.name}
-          </Text>
-        </ListItem>
-      );
-    });
-  };
-
-  // ✅ Main createLinks — PRO / хориглолтуудгүйгээр цэвэр
-  const createLinks = (routes: IRoute[]) => {
-    return routes.map((route, key) => {
-      if (route.invisible) return null;
-
-      if (route.collapse) {
-        return (
-          <Accordion defaultIndex={0} allowToggle key={key}>
-            <Flex w="100%" justifyContent={'space-between'}>
-              <AccordionItem border="none" mb="14px" key={key}>
-                <AccordionButton
-                  display="flex"
-                  alignItems="center"
-                  mb="4px"
-                  justifyContent="center"
-                  _hover={{ bg: 'unset' }}
-                  _focus={{ boxShadow: 'none' }}
-                  borderRadius="8px"
-                  w="100%"
-                  py="0px"
-                  ms={0}
-                >
-                  {route.icon ? (
-                    <Flex align="center" justifyContent="space-between" w="100%">
-                      <HStack
-                        spacing={
-                          activeRoute(route.path.toLowerCase()) ? '22px' : '26px'
-                        }
-                      >
-                        <Flex w="100%" alignItems="center" justifyContent="center">
-                          <Box
-                            color={
-                              activeRoute(route.path.toLowerCase())
-                                ? activeIcon
-                                : inactiveColor
-                            }
-                            me="12px"
-                            mt="6px"
-                          >
-                            {route.icon}
-                          </Box>
-                          <Text
-                            me="auto"
-                            color={
-                              activeRoute(route.path.toLowerCase())
-                                ? activeColor
-                                : gray
-                            }
-                            fontWeight="500"
-                            letterSpacing="0px"
-                            fontSize="sm"
-                          >
-                            {route.name}
-                          </Text>
-                        </Flex>
-                      </HStack>
-                      <AccordionIcon ms="auto" color={'gray.500'} />
-                    </Flex>
-                  ) : (
-                    <Flex pt="0px" pb="10px" alignItems="center" w="100%">
-                      <HStack
-                        spacing={
-                          activeRoute(route.path.toLowerCase()) ? '22px' : '26px'
-                        }
-                        ps="32px"
-                      >
-                        <Text me="auto" fontWeight="500" letterSpacing="0px" fontSize="sm">
-                          {route.name}
-                        </Text>
-                      </HStack>
-                      <AccordionIcon ms="auto" color={'gray.500'} />
-                    </Flex>
-                  )}
-                </AccordionButton>
-
-                <AccordionPanel py="0px" ps={'8px'}>
-                  <List>
-                    {route.items
-                      ? route.icon
-                        ? createLinks(route.items) // nested groups
-                        : createAccordionLinks(route.items) // bullet-style
-                      : null}
-                  </List>
-                </AccordionPanel>
-              </AccordionItem>
-
-              {/* ✅ PRO badge, horizon link бүрэн устгасан */}
-            </Flex>
-          </Accordion>
-        );
-      }
-
-      // leaf
-      if (route.icon || route.name) {
-        return renderLeaf(route, key);
-      }
-
-      return null;
-    });
-  };
-
-  return <>{createLinks(routes)}</>;
+          <DrawerBody maxW="285px" px="0rem" pb="0">
+            <Scrollbars
+              autoHide
+              renderTrackVertical={renderTrack}
+              renderThumbVertical={renderThumb}
+              renderView={renderView}
+            >
+              <Content routes={routes} />
+            </Scrollbars>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+    </Flex>
+  );
 }
+// PROPS
 
-export default SidebarLinks;
+export default Sidebar;
