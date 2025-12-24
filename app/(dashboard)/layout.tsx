@@ -23,7 +23,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <Box>
-      <Sidebar setApiKey={setApiKey} routes={routes} />
+   <Sidebar routes={routes} />
 
       <Box
         pt={{ base: '60px', md: '100px' }}
