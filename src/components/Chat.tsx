@@ -32,7 +32,7 @@ type ChatMessage = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  imageUrl?: string; // ✅ user message дээр thumbnail харуулах
+  imageUrl?: string; // user message дээр thumbnail
 };
 
 export default function Chat() {
@@ -43,9 +43,9 @@ export default function Chat() {
 
   // attachment
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>(''); // objectURL
 
-  // small “copied” label
+  // copied hint
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const maxLen = useMemo(() => 4000, []);
@@ -55,25 +55,26 @@ export default function Chat() {
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const textColor = useColorModeValue('navy.800', 'white');
   const subText = useColorModeValue('gray.500', 'whiteAlpha.700');
-  const pageBg = useColorModeValue('white', 'navy.900');
+  const pageBg = useColorModeValue('white', 'navy.900	or'); // safe fallback below
+  const safePageBg = useColorModeValue('white', 'navy.900');
   const composerBg = useColorModeValue('white', 'whiteAlpha.50');
   const hintBg = useColorModeValue('blackAlpha.800', 'whiteAlpha.200');
 
-  // keep focus (no need to click message area)
+  // keep focus
   useEffect(() => {
     if (loading) return;
     const t = window.setTimeout(() => taRef.current?.focus(), 0);
     return () => window.clearTimeout(t);
   }, [loading, messages.length]);
 
-  // scroll to bottom
+  // scroll bottom
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages.length, loading]);
 
-  // autosize textarea
+  // autosize
   const autosize = () => {
     const el = taRef.current;
     if (!el) return;
@@ -83,12 +84,13 @@ export default function Chat() {
   };
   useEffect(() => autosize(), [input]);
 
-  // cleanup preview url
+  // cleanup objectURL when component unmounts or when new preview is created
   useEffect(() => {
     return () => {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
     };
-  }, [imagePreview]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const showCopied = (id: string) => {
     setCopiedId(id);
@@ -99,30 +101,51 @@ export default function Chat() {
     try {
       await navigator.clipboard.writeText(text);
       showCopied(id);
-    } catch {
-      // ignore
-    }
+    } catch {}
+  };
+
+  // ✅ зөвхөн composer state цэвэрлэнэ (URL revoke хийхгүй)
+  const clearComposer = () => {
+    setImageFile(null);
+    setImagePreview('');
+    const el = document.getElementById('oy-attach-input') as HTMLInputElement | null;
+    if (el) el.value = '';
+  };
+
+  // ✅ X дарахад л revoke хийнэ
+  const removeComposer = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    clearComposer();
   };
 
   const onFileChange = (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) return;
 
-    // 5MB
     if (file.size > 5 * 1024 * 1024) return;
 
+    // өмнөх preview-г revoke
     if (imagePreview) URL.revokeObjectURL(imagePreview);
+
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
 
-  const clearImage = () => {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImageFile(null);
-    setImagePreview('');
-    const el = document.getElementById('oy-attach-input') as HTMLInputElement | null;
-    if (el) el.value = '';
-  };
+  const ActionBtn = (props: { icon: any; aria: string; onClick: () => void }) => (
+    <IconButton
+      aria-label={props.aria}
+      icon={<Icon as={props.icon} boxSize="14px" />}
+      variant="ghost"
+      size="sm"
+      borderRadius="999px"
+      h="28px"
+      w="28px"
+      minW="28px"
+      onClick={props.onClick}
+      _hover={{ bg: 'rgba(31,111,178,0.10)' }}
+      _active={{ bg: 'rgba(31,111,178,0.16)' }}
+    />
+  );
 
   const send = async () => {
     const trimmed = input.trim();
@@ -136,15 +159,18 @@ export default function Chat() {
     const userId = crypto.randomUUID();
     const assistantId = crypto.randomUUID();
 
-    // ✅ user message дээр зураг thumbnail-ийг хадгална
-    const userMsg: ChatMessage = {
-      id: userId,
-      role: 'user',
-      content: trimmed || '',
-      imageUrl: hasImage ? imagePreview : undefined,
-    };
+    // ✅ чат дотор зураг харагдах "тогтвортой" URL-г эхлээд хадгал
+    const messageImageUrl = hasImage ? imagePreview : undefined;
 
-    setMessages((p) => [...p, userMsg, { id: assistantId, role: 'assistant', content: '' }]);
+    // мессеж нэмнэ
+    setMessages((p) => [
+      ...p,
+      { id: userId, role: 'user', content: trimmed || '', imageUrl: messageImageUrl },
+      { id: assistantId, role: 'assistant', content: '' },
+    ]);
+
+    // composer-оо шууд цэвэрлэнэ (send дармагц preview алга болно)
+    if (hasImage) clearComposer();
 
     setInput('');
     setLoading(true);
@@ -152,53 +178,24 @@ export default function Chat() {
     try {
       let res: Response;
 
-if (hasImage) {
-  // ✅ 0) Preview URL-г эхлээд хадгал (chat дотор харуулахын тулд)
-  const previewForMessage = imagePreview;
+      if (hasImage) {
+        const fd = new FormData();
+        fd.append('model', model);
+        fd.append('inputCode', trimmed || '');
+        fd.append('image', imageFile as File);
 
-  // 1) FormData бэлд
-  const fd = new FormData();
-  fd.append('model', model);
-  fd.append('inputCode', trimmed || '');
-  fd.append('image', imageFile as File);
-
-  // ✅ 2) Messages-д user message оруулахдаа хадгалсан preview-г ашигла
-  const userId = crypto.randomUUID();
-  const assistantId = crypto.randomUUID();
-
-  setMessages((p) => [
-    ...p,
-    { id: userId, role: 'user', content: trimmed || '', imageUrl: previewForMessage },
-    { id: assistantId, role: 'assistant', content: '' },
-  ]);
-
-  // ✅ 3) Одоо composer preview-г цэвэрлэ (URL revoke хийхгүй)
-  clearComposerImage();
-
-  setInput('');
-  setLoading(true);
-
-  // 4) API руу явуул
-  res = await fetch('/api/chatAPI', { method: 'POST', body: fd });
-
-  // ✅ Доорх stream update хэсэгт assistantId-г хэрэглэнэ
-  // (Чиний кодонд байсан stream хэсэг unchanged)
-} else {
-  // text-only хэсэг чинь хэвээр
-  res = await fetch('/api/chatAPI', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inputCode: trimmed, model }),
-  });
-}
-      // clear attachment UI once sent
-      if (hasImage) clearImage();
+        res = await fetch('/api/chatAPI', { method: 'POST', body: fd });
+      } else {
+        res = await fetch('/api/chatAPI', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inputCode: trimmed, model }),
+        });
+      }
 
       if (!res.ok) {
         const t = await res.text().catch(() => '');
-        setMessages((p) =>
-          p.map((m) => (m.id === assistantId ? { ...m, content: `API error: ${t || res.status}` } : m)),
-        );
+        setMessages((p) => p.map((m) => (m.id === assistantId ? { ...m, content: `API error: ${t || res.status}` } : m)));
         return;
       }
       if (!res.body) return;
@@ -219,28 +216,8 @@ if (hasImage) {
     }
   };
 
-  const ActionBtn = (props: {
-    icon: any;
-    aria: string;
-    onClick: () => void;
-  }) => (
-    <IconButton
-      aria-label={props.aria}
-      icon={<Icon as={props.icon} boxSize="14px" />}
-      variant="ghost"
-      size="sm"
-      borderRadius="999px"
-      h="28px"
-      w="28px"
-      minW="28px"
-      onClick={props.onClick}
-      _hover={{ bg: 'rgba(31,111,178,0.10)' }}
-      _active={{ bg: 'rgba(31,111,178,0.16)' }}
-    />
-  );
-
   return (
-    <Flex direction="column" h="100dvh" w="100%" bg={pageBg}>
+    <Flex direction="column" h="100dvh" w="100%" bg={safePageBg}>
       <Img
         src={Bg}
         position="fixed"
@@ -253,7 +230,6 @@ if (hasImage) {
         zIndex={0}
       />
 
-      {/* Messages */}
       <Flex
         ref={scrollRef}
         direction="column"
@@ -278,34 +254,16 @@ if (hasImage) {
           ) : (
             messages.map((m) => {
               const isUser = m.role === 'user';
-              const showActions = true;
 
               return (
-                <Flex
-                  key={m.id}
-                  w="100%"
-                  justify={isUser ? 'flex-end' : 'flex-start'}
-                  align="flex-start"
-                  gap="10px"
-                >
+                <Flex key={m.id} w="100%" justify={isUser ? 'flex-end' : 'flex-start'} align="flex-start" gap="10px">
                   {!isUser && (
-                    <Flex
-                      borderRadius="full"
-                      justify="center"
-                      align="center"
-                      bg={BRAND}
-                      h="34px"
-                      minW="34px"
-                      mt="2px"
-                      flexShrink={0}
-                    >
+                    <Flex borderRadius="full" justify="center" align="center" bg={BRAND} h="34px" minW="34px" mt="2px" flexShrink={0}>
                       <Icon as={MdAutoAwesome} boxSize="16px" color="white" />
                     </Flex>
                   )}
 
-                  {/* clean body */}
                   <Flex role="group" direction="column" maxW="860px" w="100%">
-                    {/* ✅ image thumbnail inside chat */}
                     {!!m.imageUrl && (
                       <Box
                         alignSelf={isUser ? 'flex-end' : 'flex-start'}
@@ -334,68 +292,39 @@ if (hasImage) {
                       </Text>
                     )}
 
-                    {/* actions (small, cute) */}
-                    {showActions && (
-                      <Flex
-                        mt="6px"
-                        justify={isUser ? 'flex-end' : 'flex-start'}
-                        gap="6px"
-                        opacity={0}
-                        transition="opacity 0.15s ease"
-                        _groupHover={{ opacity: 1 }}
-                        sx={{ '@media (hover: none)': { opacity: 1 } }}
-                        align="center"
-                      >
-                        {isUser ? (
-                          <>
-                            <ActionBtn
-                              icon={MdEdit}
-                              aria="edit"
-                              onClick={() => {
-                                setInput(m.content || '');
-                                taRef.current?.focus();
-                              }}
-                            />
-                            <ActionBtn icon={MdContentCopy} aria="copy" onClick={() => copyToClipboard(m.content || '', m.id)} />
-                          </>
-                        ) : (
-                          <>
-                            <ActionBtn icon={MdContentCopy} aria="copy" onClick={() => copyToClipboard(m.content || '', m.id)} />
-                            <ActionBtn icon={MdThumbUpOffAlt} aria="like" onClick={() => console.log('like', m.id)} />
-                            <ActionBtn icon={MdThumbDownOffAlt} aria="dislike" onClick={() => console.log('dislike', m.id)} />
-                          </>
-                        )}
+                    <Flex
+                      mt="6px"
+                      justify={isUser ? 'flex-end' : 'flex-start'}
+                      gap="6px"
+                      opacity={0}
+                      transition="opacity 0.15s ease"
+                      _groupHover={{ opacity: 1 }}
+                      sx={{ '@media (hover: none)': { opacity: 1 } }}
+                      align="center"
+                    >
+                      {isUser ? (
+                        <>
+                          <ActionBtn icon={MdEdit} aria="edit" onClick={() => { setInput(m.content || ''); taRef.current?.focus(); }} />
+                          <ActionBtn icon={MdContentCopy} aria="copy" onClick={() => copyToClipboard(m.content || '', m.id)} />
+                        </>
+                      ) : (
+                        <>
+                          <ActionBtn icon={MdContentCopy} aria="copy" onClick={() => copyToClipboard(m.content || '', m.id)} />
+                          <ActionBtn icon={MdThumbUpOffAlt} aria="like" onClick={() => console.log('like', m.id)} />
+                          <ActionBtn icon={MdThumbDownOffAlt} aria="dislike" onClick={() => console.log('dislike', m.id)} />
+                        </>
+                      )}
 
-                        {/* ✅ small “Хууллаа” label (not big green toast) */}
-                        {copiedId === m.id && (
-                          <Box
-                            px="8px"
-                            py="3px"
-                            borderRadius="999px"
-                            bg={hintBg}
-                            color="white"
-                            fontSize="xs"
-                            lineHeight="1"
-                          >
-                            Хууллаа
-                          </Box>
-                        )}
-                      </Flex>
-                    )}
+                      {copiedId === m.id && (
+                        <Box px="8px" py="3px" borderRadius="999px" bg={hintBg} color="white" fontSize="xs" lineHeight="1">
+                          Хууллаа
+                        </Box>
+                      )}
+                    </Flex>
                   </Flex>
 
                   {isUser && (
-                    <Flex
-                      borderRadius="full"
-                      justify="center"
-                      align="center"
-                      border="1px solid"
-                      borderColor={borderColor}
-                      h="34px"
-                      minW="34px"
-                      mt="2px"
-                      flexShrink={0}
-                    >
+                    <Flex borderRadius="full" justify="center" align="center" border="1px solid" borderColor={borderColor} h="34px" minW="34px" mt="2px" flexShrink={0}>
                       <Icon as={MdPerson} boxSize="16px" color={BRAND} />
                     </Flex>
                   )}
@@ -406,16 +335,7 @@ if (hasImage) {
         </Flex>
       </Flex>
 
-      {/* Composer */}
-      <Box
-        position="sticky"
-        bottom="0"
-        zIndex={2}
-        borderTop="1px solid"
-        borderColor={borderColor}
-        bg={pageBg}
-        pb="calc(env(safe-area-inset-bottom) + 12px)"
-      >
+      <Box position="sticky" bottom="0" zIndex={2} borderTop="1px solid" borderColor={borderColor} bg={safePageBg} pb="calc(env(safe-area-inset-bottom) + 12px)">
         <Flex w="100%" maxW="920px" mx="auto" px={{ base: '14px', md: '0px' }} py="12px">
           <Flex
             w="100%"
@@ -437,7 +357,6 @@ if (hasImage) {
               onChange={(e) => onFileChange(e.target.files?.[0] || null)}
             />
 
-            {/* attach label = reliable click */}
             <Box as="label" htmlFor="oy-attach-input" m="0" cursor={loading ? 'not-allowed' : 'pointer'}>
               <IconButton
                 aria-label="attach"
@@ -451,7 +370,6 @@ if (hasImage) {
               />
             </Box>
 
-            {/* ✅ preview inside composer + X centered */}
             {imagePreview && (
               <Box
                 position="relative"
@@ -480,8 +398,7 @@ if (hasImage) {
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
-                  lineHeight="1"
-                  onClick={clearImage}
+                  onClick={removeComposer}
                 />
               </Box>
             )}
