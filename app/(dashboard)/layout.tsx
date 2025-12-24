@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Box, Portal, useDisclosure } from '@chakra-ui/react';
 import routes from '@/routes';
 import Sidebar from '@/components/sidebar/Sidebar';
@@ -13,11 +13,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { onOpen } = useDisclosure();
 
+  // ✅ NavbarAdmin props шаарддаг болохоор “хоосон” setApiKey өгч type алдааг арилгана
+  const [, setApiKey] = useState('');
+
   const hideFooter = pathname?.startsWith('/chat');
 
   return (
     <Box>
-      {/* ✅ setApiKey бүү дамжуул (SideBar чинь ихэнхдээ хэрэглэхгүй, алдаа үүсгэдэг) */}
       <Sidebar routes={routes ?? []} />
 
       <Box
@@ -33,6 +35,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <Portal>
           <Box>
             <Navbar
+              setApiKey={setApiKey}
               onOpen={onOpen}
               logoText={'oyunsanaa'}
               brandText={getActiveRoute(routes, pathname)}
@@ -41,7 +44,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </Box>
         </Portal>
 
-        {/* ✅ ганц scroll энд */}
         <Box
           mx="auto"
           p={{ base: '20px', md: '30px' }}
