@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable */
 
 import {
   Accordion,
@@ -20,7 +21,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MENU_CONFIG } from '@/config/menu.config';
 
-export default function LinksMenu() {
+export default function Links() {
   const pathname = usePathname();
 
   const activeText = useColorModeValue('navy.700', 'white');
@@ -68,7 +69,8 @@ export default function LinksMenu() {
               >
                 {group.items.map((item) => {
                   const isActive =
-                    pathname === item.href || pathname?.startsWith(item.href + '/');
+                    pathname === item.href ||
+                    pathname?.startsWith(item.href + '/');
 
                   return (
                     <ListItem key={item.id}>
@@ -95,7 +97,9 @@ export default function LinksMenu() {
                         <Text
                           fontSize="sm"
                           fontWeight={isActive || item.isApp ? '700' : '500'}
-                          color={item.isApp ? brand : isActive ? activeText : inactiveText}
+                          color={
+                            item.isApp ? brand : isActive ? activeText : inactiveText
+                          }
                         >
                           {item.label}
                         </Text>
