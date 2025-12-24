@@ -1,23 +1,24 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase/browser';
 
-// энд чинь хуучин login UI component-оо import хийнэ
-// import LoginForm from '@/components/auth/LoginForm';
-
-export default function LoginClient() {
+export default function CallbackClient() {
+  const router = useRouter();
   const sp = useSearchParams();
 
-  const next = useMemo(() => sp.get('next') || '/chat', [sp]);
+  useEffect(() => {
+    const run = async () => {
+      const next = sp.get('next') || '/chat';
+      const code = sp.get('code');
 
-  // LoginForm руу next дамжуулах бол:
-  // return <LoginForm next={next} />;
+      if (code) await supabase.auth.exchangeCodeForSession(code);
 
-  return (
-    <div style={{ padding: 24 }}>
-      {/* энд existing login UI-гаа render хий */}
-      Login UI here. next = {next}
-    </div>
-  );
+      router.replace(next);
+    };
+    run();
+  }, [router, sp]);
+
+  return null;
 }
