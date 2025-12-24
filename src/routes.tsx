@@ -6,7 +6,7 @@ import {
   FaBrain,
   FaHandshake,
   FaBullseye,
-  FaHeartPulse,
+ FaHeart,
   FaMugHot,
   FaDollarSign,
 } from 'react-icons/fa';
@@ -78,7 +78,7 @@ export const routes: IRoute[] = [
     name: 'Өөрийгөө хайрлах',
     path: '/mind/self-care',
     collapse: true,
-    icon: <Icon as={FaHeartPulse} w="18px" h="18px" />,
+  icon: <Icon as={FaHeart} w="18px" h="18px" />,
     items: [
       { name: 'Сэтгэл санааг дэмжих', path: '/mind/self-care/emotional-support' },
       { name: 'Стресс ба ядаргаа', path: '/mind/self-care/stress' },
