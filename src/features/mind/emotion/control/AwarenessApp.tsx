@@ -8,6 +8,7 @@ import {
   Button,
   Flex,
   Heading,
+  HStack,
   Icon,
   Link,
   Stack,
@@ -18,15 +19,10 @@ import { Brain, MessageCircle, Sparkles, Check } from 'lucide-react';
 
 type Section = { id: string; title: string; paragraphs: string[] };
 
+// ✅ брэнд өнгөө CSS variable-оос авна (fallback #1F6FB2)
+const BRAND = 'var(--brand, #1F6FB2)';
+
 export default function AwarenessApp() {
-  const brand = '#1F6FB2';
-
-  const cardBg = useColorModeValue('rgba(255,255,255,0.75)', 'rgba(17,25,40,0.45)');
-  const cardBorder = useColorModeValue('rgba(31,111,178,0.18)', 'rgba(255,255,255,0.12)');
-  const subtleText = useColorModeValue('blackAlpha.700', 'whiteAlpha.700');
-  const panelBg = useColorModeValue('blackAlpha.50', 'whiteAlpha.100');
-  const itemBorder = useColorModeValue('blackAlpha.100', 'whiteAlpha.200');
-
   const sections: Section[] = useMemo(
     () => [
       {
@@ -34,7 +30,7 @@ export default function AwarenessApp() {
         title: 'Мэдрэхүй гэж юу вэ?',
         paragraphs: [
           'Бид өдөрт олон зуун жижиг сэтгэгдэл, мэдрэмжийг мэдэрдэг ч ихэнхийг нь анзааралгүй өнгөрөөдөг.',
-          '“Зүгээр дээ” гэж өнгөрөөх биш, “Одоо би түгшиж байна” гэж өөртөө тодорхой хэлж сурах нь чухал.',
+          '“Зүгээр дээ” гэж өнгөрөөх биш, “Одоо би түгшиж байна”, “Уурлаж байна” гэх мэтээр өөртөө тодорхой хэлж сурах нь чухал.',
         ],
       },
       {
@@ -42,15 +38,15 @@ export default function AwarenessApp() {
         title: 'Ямар ямар мэдрэмжүүд байдаг вэ?',
         paragraphs: [
           'Сэтгэл судлалд мэдрэмжүүдийг ерөнхий нь баяр, гуниг, айдас, уур гэсэн үндсэн бүлгүүдэд хуваадаг.',
-          'Энэ хэсэгт та өдөр тутам мэдэрдэг зүйлсээ эдгээр бүлэгтэй холбоож эхэлнэ.',
+          'Энэ хэсэгт та өөрийн өдөр тутам мэдэрдэг зүйлсийг эдгээр бүлэгтэй холбож эхэлнэ.',
         ],
       },
       {
         id: 'understand',
         title: 'Юуг ойлгох ёстой вэ?',
         paragraphs: [
-          'Мэдрэмж гэдэг нь бодит байдлын тушаал биш, харин анхааруулга, мэдээлэл юм.',
-          'Мэдрэмжээ ойлгож эхлэхэд реакц маягийн огцом хариу биш, сонголт хийх чадвар нэмэгдэнэ.',
+          'Мэдрэмж бол бодит байдлын тушаал биш, харин анхааруулга, мэдээлэл юм.',
+          'Мэдрэмжээ уншиж сурвал реакц биш, сонголт хийх чадвар нэмэгдэнэ.',
         ],
       },
       {
@@ -76,186 +72,112 @@ export default function AwarenessApp() {
 
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  return (
-    <Box
-      minH="100vh"
-      px={{ base: 4, md: 6 }}
-      py={{ base: 6, md: 8 }}
-      position="relative"
-      overflow="hidden"
-    >
-      {/* soft background */}
-      <Box
-        position="absolute"
-        inset={0}
-        zIndex={-1}
-        bgGradient={useColorModeValue(
-          'linear(to-br, #F6FAFF 0%, #EAF3FF 40%, #FFFFFF 100%)',
-          'linear(to-br, #0B1220 0%, #101B2B 45%, #0A0F1A 100%)'
-        )}
-      />
-      <Box
-        position="absolute"
-        top="-220px"
-        left="-200px"
-        w="520px"
-        h="520px"
-        borderRadius="999px"
-        bg={brand}
-        opacity={useColorModeValue(0.10, 0.16)}
-        filter="blur(40px)"
-        zIndex={-1}
-      />
-      <Box
-        position="absolute"
-        top="-160px"
-        right="-220px"
-        w="560px"
-        h="560px"
-        borderRadius="999px"
-        bg={brand}
-        opacity={useColorModeValue(0.08, 0.14)}
-        filter="blur(44px)"
-        zIndex={-1}
-      />
+  const pageBg = useColorModeValue('#F7FAFF', '#0A0F1A');
+  const cardBg = useColorModeValue('rgba(255,255,255,0.72)', 'rgba(17,25,40,0.55)');
+  const border = useColorModeValue('rgba(0,0,0,0.08)', 'rgba(255,255,255,0.12)');
+  const textSub = useColorModeValue('blackAlpha.700', 'whiteAlpha.700');
+  const pillBg = useColorModeValue('rgba(31,111,178,0.10)', 'rgba(31,111,178,0.18)');
 
-      <Box maxW="3xl" mx="auto">
-        {/* header */}
-        <Flex align="center" justify="space-between" mb={6}>
-          <Flex align="center" gap={2}>
-            <Box
-              w="34px"
-              h="34px"
-              borderRadius="999px"
-              border="1px solid"
-              borderColor={itemBorder}
-              bg={panelBg}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Icon as={Brain as any} boxSize="18px" color={brand} />
+  return (
+    <Box minH="100vh" bg={pageBg} position="relative" overflow="hidden" px={{ base: 4, md: 6 }} py={{ base: 6, md: 8 }}>
+      {/* Soft blobs */}
+      <Box position="absolute" top="-180px" left="-220px" w="520px" h="520px" borderRadius="999px" bg={BRAND} opacity={0.12} filter="blur(44px)" />
+      <Box position="absolute" top="-160px" right="-240px" w="560px" h="560px" borderRadius="999px" bg={BRAND} opacity={0.10} filter="blur(48px)" />
+
+      <Box maxW="720px" mx="auto">
+        {/* Local top row (page-level). Not the big Horizon header */}
+        <Flex align="center" justify="space-between" mb={4}>
+          <HStack spacing={2}>
+            <Box w="34px" h="34px" borderRadius="999px" border="1px solid" borderColor={border} bg={cardBg} display="flex" alignItems="center" justifyContent="center">
+              <Icon as={Brain as any} boxSize="18px" color={BRAND} />
             </Box>
-            <Text fontWeight="700" fontSize="sm" opacity={0.85}>
+            <Text fontWeight="700" fontSize="sm" color={useColorModeValue('blackAlpha.800', 'whiteAlpha.900')}>
               Миний сэтгэлзүй
             </Text>
-          </Flex>
+          </HStack>
 
-          <Link
-            as={NextLink}
-            href="/"
-            display="inline-flex"
-            alignItems="center"
-            gap={2}
-            px={3}
-            py={2}
-            borderRadius="999px"
-            border="1px solid"
-            borderColor={itemBorder}
-            bg={panelBg}
-            _hover={{ textDecoration: 'none', opacity: 0.95 }}
-          >
-            <Icon as={MessageCircle as any} boxSize="16px" color={brand} />
-            <Text fontSize="xs" opacity={0.8}>
+          <Link as={NextLink} href="/" _hover={{ textDecoration: 'none' }}>
+            <Button size="sm" variant="outline" borderColor={border} bg={cardBg} leftIcon={<Icon as={MessageCircle as any} boxSize="16px" color={BRAND} />}>
               Чат
-            </Text>
+            </Button>
           </Link>
         </Flex>
 
-        {/* main card */}
-        <Box
-          borderRadius="24px"
-          border="1px solid"
-          borderColor={cardBorder}
-          bg={cardBg}
-          backdropFilter="blur(16px)"
-          boxShadow={useColorModeValue('0 18px 60px rgba(0,0,0,0.08)', '0 18px 60px rgba(0,0,0,0.35)')}
-          p={{ base: 5, md: 6 }}
-        >
+        <Box borderRadius="24px" border="1px solid" borderColor={border} bg={cardBg} backdropFilter="blur(16px)" p={{ base: 5, md: 6 }}>
           <Stack spacing={5}>
-            <Flex align="center" gap={2}>
-              <Badge
-                display="inline-flex"
-                alignItems="center"
-                gap={2}
-                px={3}
-                py={1.5}
-                borderRadius="999px"
-                bg={panelBg}
-                border="1px solid"
-                borderColor={itemBorder}
-                color={brand}
-                textTransform="none"
-                fontWeight="700"
-              >
-                <Icon as={Sparkles as any} boxSize="14px" />
-                Сэтгэл хөдлөл
-              </Badge>
-            </Flex>
+            <Badge
+              w="fit-content"
+              px={3}
+              py={1.5}
+              borderRadius="999px"
+              bg={pillBg}
+              color={BRAND}
+              textTransform="none"
+              fontWeight="800"
+              display="inline-flex"
+              alignItems="center"
+              gap={2}
+            >
+              <Icon as={Sparkles as any} boxSize="14px" />
+              Сэтгэл хөдлөл
+            </Badge>
 
             <Box>
-              <Heading size="lg" fontWeight="600" letterSpacing="-0.3px">
+              <Heading size="lg" fontWeight="800" letterSpacing="-0.6px" color={useColorModeValue('blackAlpha.900', 'whiteAlpha.900')}>
                 Сэтгэл дотроо юу болж
-                <br /> байгааг мэдэрч сурья
+                <br /> байгааг мэдэрч суръя
               </Heading>
-              <Text mt={2} fontSize="sm" color={subtleText} lineHeight="1.7">
+              <Text mt={2} fontSize="sm" color={textSub} lineHeight="1.7">
                 Өөрийн дотоод хөдөлгөөнийг ажиглаж, нэрлэж, ойлгох дадлыг эндээс эхлүүлнэ.
               </Text>
             </Box>
 
-            {/* accordion-ish list */}
             <Stack spacing={3}>
               {sections.map((s, idx) => {
                 const isOpen = openIndex === idx;
+
                 return (
-                  <Box
-                    key={s.id}
-                    borderRadius="18px"
-                    border="1px solid"
-                    borderColor={itemBorder}
-                    bg={panelBg}
-                    overflow="hidden"
-                  >
+                  <Box key={s.id} borderRadius="18px" border="1px solid" borderColor={border} bg={useColorModeValue('rgba(255,255,255,0.55)', 'rgba(255,255,255,0.06)')} overflow="hidden">
                     <Button
-                      onClick={() => setOpenIndex((prev) => (prev === idx ? null : idx))}
                       w="100%"
-                      justifyContent="space-between"
                       variant="ghost"
+                      justifyContent="space-between"
                       px={4}
                       py={6}
                       borderRadius="0"
+                      onClick={() => setOpenIndex((prev) => (prev === idx ? null : idx))}
                       _hover={{ bg: useColorModeValue('blackAlpha.50', 'whiteAlpha.100') }}
                     >
-                      <Flex align="center" gap={3}>
+                      <HStack spacing={3}>
                         <Box
                           w="26px"
                           h="26px"
                           borderRadius="999px"
                           border="1px solid"
-                          borderColor={itemBorder}
-                          bg={useColorModeValue('white', 'blackAlpha.300')}
+                          borderColor={border}
+                          bg={useColorModeValue('white', 'rgba(0,0,0,0.25)')}
                           display="flex"
                           alignItems="center"
                           justifyContent="center"
                           fontSize="12px"
-                          fontWeight="800"
-                          color={brand}
+                          fontWeight="900"
+                          color={BRAND}
                         >
                           {idx + 1}
                         </Box>
-                        <Text fontSize="sm" fontWeight="700" textAlign="left">
+                        <Text fontSize="sm" fontWeight="800" textAlign="left">
                           {s.title}
                         </Text>
-                      </Flex>
+                      </HStack>
 
-                      <Icon as={Check as any} boxSize="16px" color={brand} />
+                      <Icon as={Check as any} boxSize="16px" color={BRAND} opacity={0.9} />
                     </Button>
 
                     {isOpen ? (
-                      <Box px={4} pb={4} pt={1} borderTop="1px solid" borderColor={itemBorder}>
+                      <Box px={4} pb={4} pt={1} borderTop="1px solid" borderColor={border}>
                         <Stack spacing={2}>
                           {s.paragraphs.map((p, i) => (
-                            <Text key={i} fontSize="sm" color={subtleText} lineHeight="1.75">
+                            <Text key={i} fontSize="sm" color={textSub} lineHeight="1.75">
                               {p}
                             </Text>
                           ))}
