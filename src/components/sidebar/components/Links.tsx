@@ -100,7 +100,7 @@ export default function Links() {
                       pathname?.startsWith(item.href + '/');
 
                     return (
-                      <ListItem key={item.id}>
+                      <ListItem key={`${group.id}-${item.id}`}>
                         {/* ✅ NEXT LINK + CHAKRA LINK: click 100% ажиллана */}
                         <ChakraLink
                           as={NextLink}
