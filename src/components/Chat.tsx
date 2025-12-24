@@ -3,32 +3,26 @@
 
 import { OpenAIModel } from '@/types/types';
 import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
   Box,
   Button,
   Flex,
   Icon,
   IconButton,
   Img,
-  Input,
   Text,
+  Textarea,
   Tooltip,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  MdAttachFile,
   MdAutoAwesome,
-  MdBolt,
+  MdClose,
   MdContentCopy,
   MdEdit,
   MdPerson,
   MdSend,
-  MdAttachFile,
-  MdClose,
 } from 'react-icons/md';
 
 const Bg = '/img/chat/bg-image.png';
@@ -37,34 +31,29 @@ const BRAND = '#1F6FB2';
 type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string };
 
 export default function Chat() {
-  const [model, setModel] = useState<OpenAIModel>('gpt-4o');
+  const [model] = useState<OpenAIModel>('gpt-4o');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // image attachment
+  // attachment
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
 
-  const maxLen = useMemo(() => 2000, []);
+  const maxLen = useMemo(() => 4000, []);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // input autosize control
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
-  const inputColor = useColorModeValue('navy.700', 'white');
-  const iconColor = useColorModeValue('brand.500', 'white');
-  const bgIcon = useColorModeValue(
-    'linear-gradient(180deg, #FBFBFF 0%, #CACAFF 100%)',
-    'whiteAlpha.200',
-  );
-  const buttonBg = useColorModeValue('white', 'whiteAlpha.100');
-  const gray = useColorModeValue('gray.500', 'whiteAlpha.700');
-  const buttonShadow = useColorModeValue('14px 27px 45px rgba(112, 144, 176, 0.2)', 'none');
-  const textColor = useColorModeValue('navy.700', 'white');
-  const placeholderColor = useColorModeValue({ color: 'gray.500' }, { color: 'whiteAlpha.600' });
-  const assistantBg = useColorModeValue('gray.50', 'whiteAlpha.100');
-  const userBg = useColorModeValue('white', 'whiteAlpha.100');
+  const textColor = useColorModeValue('navy.800', 'white');
+  const subText = useColorModeValue('gray.500', 'whiteAlpha.700');
+  const pageBg = useColorModeValue('white', 'navy.900');
+
+  const userBubbleBg = useColorModeValue('white', 'whiteAlpha.100');
+  const assistantTextBg = 'transparent';
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -73,11 +62,7 @@ export default function Chat() {
   }, [messages.length, loading]);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [messages.length, loading]);
-
-  useEffect(() => {
-    // cleanup old preview url
+    // cleanup preview url
     return () => {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
     };
@@ -103,19 +88,15 @@ export default function Chat() {
 
   const onFileChange = (file: File | null) => {
     if (!file) return;
-
-    // only images
     if (!file.type.startsWith('image/')) return;
 
-    // optional size limit (5MB)
-    const maxMB = 5;
-    if (file.size > maxMB * 1024 * 1024) {
-      alert(`Зураг хэт том байна (${maxMB}MB-с бага байгаарай).`);
+    // size limit 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Зураг хэт том байна (5MB-с бага байгаарай).');
       return;
     }
 
     if (imagePreview) URL.revokeObjectURL(imagePreview);
-
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
@@ -127,10 +108,21 @@ export default function Chat() {
     if (fileRef.current) fileRef.current.value = '';
   };
 
+  // Textarea autosize (SDK style)
+  const autosize = () => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = '0px';
+    const next = Math.min(el.scrollHeight, 140); // max ~6 lines
+    el.style.height = `${next}px`;
+  };
+
+  useEffect(() => {
+    autosize();
+  }, [input]);
+
   const send = async () => {
     const trimmed = input.trim();
-
-    // allow: text OR image
     const hasText = !!trimmed;
     const hasImage = !!imageFile;
 
@@ -140,7 +132,6 @@ export default function Chat() {
     const userId = crypto.randomUUID();
     const assistantId = crypto.randomUUID();
 
-    // Show what user sent (simple)
     const userContent =
       hasText && hasImage
         ? `${trimmed}\n\n[Зураг хавсаргасан]`
@@ -160,19 +151,15 @@ export default function Chat() {
     try {
       let res: Response;
 
+      // image -> FormData, text only -> JSON
       if (hasImage) {
-        // FormData mode (text + image)
         const fd = new FormData();
         fd.append('model', model);
         fd.append('inputCode', trimmed || '');
         fd.append('image', imageFile as File);
 
-        res = await fetch('/api/chatAPI', {
-          method: 'POST',
-          body: fd,
-        });
+        res = await fetch('/api/chatAPI', { method: 'POST', body: fd });
       } else {
-        // JSON mode (text only)
         res = await fetch('/api/chatAPI', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -180,7 +167,6 @@ export default function Chat() {
         });
       }
 
-      // once request is in flight, clear image UI
       if (hasImage) clearImage();
 
       if (!res.ok) {
@@ -206,177 +192,91 @@ export default function Chat() {
       }
     } finally {
       setLoading(false);
-      setTimeout(() => inputRef.current?.focus(), 0);
+      setTimeout(() => taRef.current?.focus(), 0);
     }
   };
 
   return (
-    <Flex direction="column" h="100dvh" w="100%" position="relative">
+    <Flex direction="column" h="100dvh" w="100%" bg={pageBg}>
+      {/* background mark */}
       <Img
         src={Bg}
-        position="absolute"
+        position="fixed"
         w={{ base: '220px', md: '350px' }}
         left="50%"
         top="45%"
         transform="translate(-50%, -50%)"
-        opacity={0.1}
+        opacity={0.06}
         pointerEvents="none"
+        zIndex={0}
       />
 
-      {/* Top controls */}
-      (/* ... танай дээрх Top controls хэсэг өөрчлөхгүй хэвээр ... */) && null
-
-      {/* --- Top controls (unchanged, just pasted back) --- */}
-      <Flex direction="column" w="100%" flexShrink={0} zIndex={2} pt="14px">
-        <Flex mx="auto" w="max-content" mb="12px" borderRadius="60px" gap="10px">
-          <Flex
-            cursor="pointer"
-            transition="0.2s"
-            justify="center"
-            align="center"
-            bg={model === 'gpt-3.5-turbo' ? buttonBg : 'transparent'}
-            w={{ base: '150px', md: '174px' }}
-            h="56px"
-            boxShadow={model === 'gpt-3.5-turbo' ? buttonShadow : 'none'}
-            borderRadius="14px"
-            color={textColor}
-            fontSize="15px"
-            fontWeight="700"
-            onClick={() => setModel('gpt-3.5-turbo')}
-            border="1px solid"
-            borderColor={model === 'gpt-3.5-turbo' ? BRAND : borderColor}
-          >
-            <Flex
-              borderRadius="full"
-              justify="center"
-              align="center"
-              bg={bgIcon}
-              me="10px"
-              h="34px"
-              w="34px"
-            >
-              <Icon as={MdAutoAwesome} boxSize="18px" color={iconColor} />
-            </Flex>
-            GPT-3.5
-          </Flex>
-
-          <Flex
-            cursor="pointer"
-            transition="0.2s"
-            justify="center"
-            align="center"
-            bg={model === 'gpt-4o' ? buttonBg : 'transparent'}
-            w={{ base: '150px', md: '164px' }}
-            h="56px"
-            boxShadow={model === 'gpt-4o' ? buttonShadow : 'none'}
-            borderRadius="14px"
-            color={textColor}
-            fontSize="15px"
-            fontWeight="700"
-            onClick={() => setModel('gpt-4o')}
-            border="1px solid"
-            borderColor={model === 'gpt-4o' ? BRAND : borderColor}
-          >
-            <Flex
-              borderRadius="full"
-              justify="center"
-              align="center"
-              bg={bgIcon}
-              me="10px"
-              h="34px"
-              w="34px"
-            >
-              <Icon as={MdBolt} boxSize="18px" color={iconColor} />
-            </Flex>
-            GPT-4o
-          </Flex>
-        </Flex>
-
-        <Accordion color={gray} allowToggle w="100%" my="0px" mx="auto">
-          <AccordionItem border="none">
-            <AccordionButton
-              borderBottom="0px solid"
-              maxW="max-content"
-              mx="auto"
-              _hover={{ border: '0px solid', bg: 'none' }}
-              _focus={{ border: '0px solid', bg: 'none' }}
-            >
-              <Box flex="1" textAlign="left">
-                <Text color={gray} fontWeight="500" fontSize="sm">
-                  No plugins added
-                </Text>
-              </Box>
-              <AccordionIcon color={gray} />
-            </AccordionButton>
-            <AccordionPanel mx="auto" w="max-content" p="0px 0px 10px 0px">
-              <Text color={gray} fontWeight="500" fontSize="sm" textAlign="center">
-                .
-              </Text>
-            </AccordionPanel>
-          </AccordionItem>
-        </Accordion>
-      </Flex>
-
-      {/* Messages */}
+      {/* Messages area */}
       <Flex
         ref={scrollRef}
         direction="column"
         flex="1"
         minH="0"
         overflowY="auto"
-        px={{ base: '10px', md: '0px' }}
+        zIndex={1}
+        px={{ base: '14px', md: '0px' }}
+        pt="18px"
+        pb="18px"
       >
-        <Flex
-          direction="column"
-          mx="auto"
-          w="100%"
-          maxW="1000px"
-          px={{ base: '10px', md: '0px' }}
-          py="12px"
-          gap="12px"
-        >
+        <Flex direction="column" mx="auto" w="100%" maxW="920px" gap="14px">
           {messages.length === 0 ? (
-            <Flex direction="column" align="center" justify="center" mt="24px" opacity={0.95}>
+            <Flex direction="column" align="center" justify="center" mt="18px">
               <Text color={textColor} fontWeight="800" fontSize="lg">
                 Сайн уу? 🙂
               </Text>
-              <Text color={gray} fontSize="sm" textAlign="center" mt="6px" maxW="520px">
-                Сэтгэлийн туслагч Oyunsanaa байна. Танид юугаар туслах уу?
+              <Text color={subText} fontSize="sm" textAlign="center" mt="6px" maxW="520px">
+                Сэтгэлийн туслагч Oyunsanaa байна. Юугаар туслах вэ?
               </Text>
             </Flex>
           ) : (
             messages.map((m) => {
               const isUser = m.role === 'user';
-              return (
-                <Flex key={m.id} w="100%" align="flex-start" mb="2px">
-                  <Flex
-                    borderRadius="full"
-                    justify="center"
-                    align="center"
-                    bg={isUser ? 'transparent' : BRAND}
-                    border={isUser ? '1px solid' : 'none'}
-                    borderColor={isUser ? borderColor : 'transparent'}
-                    me="14px"
-                    h="36px"
-                    minW="36px"
-                    mt="2px"
-                  >
-                    <Icon as={isUser ? MdPerson : MdAutoAwesome} boxSize="18px" color={isUser ? BRAND : 'white'} />
-                  </Flex>
 
+              return (
+                <Flex
+                  key={m.id}
+                  w="100%"
+                  justify={isUser ? 'flex-end' : 'flex-start'}
+                  align="flex-start"
+                  gap="10px"
+                >
+                  {/* assistant avatar (left only) */}
+                  {!isUser && (
+                    <Flex
+                      borderRadius="full"
+                      justify="center"
+                      align="center"
+                      bg={BRAND}
+                      h="34px"
+                      minW="34px"
+                      mt="2px"
+                      flexShrink={0}
+                    >
+                      <Icon as={MdAutoAwesome} boxSize="16px" color="white" />
+                    </Flex>
+                  )}
+
+                  {/* message body */}
                   <Flex
                     role="group"
                     direction="column"
-                    p="14px 16px"
-                    border="1px solid"
-                    borderColor={borderColor}
-                    borderRadius="18px"
+                    maxW={isUser ? '720px' : '860px'}
                     w="100%"
-                    bg={isUser ? userBg : assistantBg}
+                    bg={isUser ? userBubbleBg : assistantTextBg}
+                    border={isUser ? '1px solid' : 'none'}
+                    borderColor={isUser ? borderColor : 'transparent'}
+                    borderRadius={isUser ? '18px' : '0px'}
+                    px={isUser ? '14px' : '0px'}
+                    py={isUser ? '12px' : '0px'}
                   >
                     <Text
                       color={textColor}
-                      fontWeight="600"
+                      fontWeight={isUser ? '600' : '500'}
                       fontSize={{ base: 'sm', md: 'md' }}
                       lineHeight={{ base: '22px', md: '24px' }}
                       whiteSpace="pre-wrap"
@@ -385,10 +285,10 @@ export default function Chat() {
                       {m.content}
                     </Text>
 
-                    {/* small cute actions (hover on desktop) */}
+                    {/* small actions (SDK-like) */}
                     <Flex
-                      mt="8px"
-                      justify="flex-end"
+                      mt={isUser ? '8px' : '6px'}
+                      justify={isUser ? 'flex-end' : 'flex-start'}
                       gap="6px"
                       opacity={0}
                       transition="opacity 0.15s ease"
@@ -404,11 +304,14 @@ export default function Chat() {
                             h="28px"
                             p="0"
                             borderRadius="999px"
-                            onClick={() => setInput(m.content)}
+                            onClick={() => {
+                              setInput(m.content);
+                              setTimeout(() => taRef.current?.focus(), 0);
+                            }}
                             _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
                             _active={{ bg: 'rgba(31,111,178,0.14)' }}
                           >
-                            <Icon as={MdEdit} boxSize="14px" color={gray} />
+                            <Icon as={MdEdit} boxSize="14px" color={subText} />
                           </Button>
                         </Tooltip>
                       )}
@@ -425,11 +328,28 @@ export default function Chat() {
                           _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
                           _active={{ bg: 'rgba(31,111,178,0.14)' }}
                         >
-                          <Icon as={MdContentCopy} boxSize="14px" color={gray} />
+                          <Icon as={MdContentCopy} boxSize="14px" color={subText} />
                         </Button>
                       </Tooltip>
                     </Flex>
                   </Flex>
+
+                  {/* user avatar (right) */}
+                  {isUser && (
+                    <Flex
+                      borderRadius="full"
+                      justify="center"
+                      align="center"
+                      border="1px solid"
+                      borderColor={borderColor}
+                      h="34px"
+                      minW="34px"
+                      mt="2px"
+                      flexShrink={0}
+                    >
+                      <Icon as={MdPerson} boxSize="16px" color={BRAND} />
+                    </Flex>
+                  )}
                 </Flex>
               );
             })
@@ -437,27 +357,25 @@ export default function Chat() {
         </Flex>
       </Flex>
 
-      {/* Input */}
+      {/* Composer (SDK style) */}
       <Box
         position="sticky"
         bottom="0"
-        zIndex={3}
+        zIndex={2}
         borderTop="1px solid"
         borderColor={borderColor}
-        bg={useColorModeValue('white', 'navy.900')}
-        px={{ base: '10px', md: '10px' }}
-        pt="10px"
+        bg={pageBg}
         pb="calc(env(safe-area-inset-bottom) + 12px)"
       >
-        <Flex w="100%" maxW="1000px" mx="auto" direction="column" gap="8px">
-          {/* image preview row */}
+        <Flex w="100%" maxW="920px" mx="auto" px={{ base: '14px', md: '0px' }} py="12px" direction="column" gap="10px">
+          {/* attachment preview (standard: above input) */}
           {imagePreview && (
             <Flex
               align="center"
               justify="space-between"
               border="1px solid"
               borderColor={borderColor}
-              borderRadius="14px"
+              borderRadius="16px"
               p="8px"
               bg={useColorModeValue('gray.50', 'whiteAlpha.50')}
             >
@@ -478,7 +396,7 @@ export default function Chat() {
                   <Text fontSize="sm" fontWeight="700" color={textColor} noOfLines={1}>
                     Зураг хавсаргасан
                   </Text>
-                  <Text fontSize="xs" color={gray} noOfLines={1}>
+                  <Text fontSize="xs" color={subText} noOfLines={1}>
                     {imageFile?.name}
                   </Text>
                 </Box>
@@ -495,7 +413,16 @@ export default function Chat() {
             </Flex>
           )}
 
-          <Flex w="100%" gap="10px" align="center">
+          <Flex
+            border="1px solid"
+            borderColor={borderColor}
+            borderRadius="18px"
+            px="10px"
+            py="10px"
+            align="flex-end"
+            gap="8px"
+            bg={useColorModeValue('white', 'whiteAlpha.50')}
+          >
             {/* hidden file input */}
             <input
               ref={fileRef}
@@ -505,7 +432,6 @@ export default function Chat() {
               onChange={(e) => onFileChange(e.target.files?.[0] || null)}
             />
 
-            {/* attach button */}
             <Tooltip label="Зураг хавсаргах" hasArrow>
               <IconButton
                 aria-label="attach"
@@ -514,41 +440,41 @@ export default function Chat() {
                 isDisabled={loading}
                 variant="ghost"
                 borderRadius="14px"
-                h="52px"
-                w="52px"
+                h="40px"
+                w="40px"
                 _hover={{ bg: 'rgba(31,111,178,0.08)', color: BRAND }}
                 _active={{ bg: 'rgba(31,111,178,0.14)' }}
               />
             </Tooltip>
 
-            {/* text input */}
-            <Input
-              ref={inputRef}
+            {/* textarea (autosize + scroll after max) */}
+            <Textarea
+              ref={taRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              placeholder="Мессеж бичээрэй…"
+              resize="none"
+              rows={1}
+              minH="40px"
+              maxH="140px"
+              overflowY="auto"
+              border="none"
+              px="6px"
+              py="8px"
+              fontSize="sm"
+              fontWeight="500"
+              color={textColor}
+              _placeholder={{ color: subText }}
+              _focus={{ boxShadow: 'none' }}
+              isDisabled={loading}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   send();
                 }
               }}
-              minH="52px"
-              h="52px"
-              flex="1"
-              border="1px solid"
-              borderColor={borderColor}
-              borderRadius="14px"
-              px="14px"
-              fontSize="sm"
-              fontWeight="500"
-              _focus={{ borderColor: BRAND }}
-              color={inputColor}
-              _placeholder={placeholderColor}
-              placeholder="Мессежээ бичээрэй..."
-              isDisabled={loading}
             />
 
-            {/* send button (arrow icon) */}
             <Tooltip label="Илгээх" hasArrow>
               <IconButton
                 aria-label="send"
@@ -556,8 +482,8 @@ export default function Chat() {
                 onClick={send}
                 isLoading={loading}
                 borderRadius="14px"
-                h="52px"
-                w="52px"
+                h="40px"
+                w="40px"
                 bg={BRAND}
                 color="white"
                 _hover={{ opacity: 0.92 }}
@@ -565,6 +491,10 @@ export default function Chat() {
               />
             </Tooltip>
           </Flex>
+
+          <Text fontSize="xs" color={subText} textAlign="center">
+            Enter = илгээх · Shift+Enter = шинэ мөр
+          </Text>
         </Flex>
       </Box>
     </Flex>
