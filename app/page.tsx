@@ -38,7 +38,7 @@ type ChatMessage = {
 };
 
 export default function Chat() {
-  const [model, setModel] = useState<OpenAIModel>('gpt-3.5-turbo');
+  const [model, setModel] = useState<OpenAIModel>('gpt-4o');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -145,7 +145,12 @@ export default function Chat() {
         const { value, done } = await reader.read();
         if (done) break;
 
-        acc += decoder.decode(value || new Uint8Array(), { stream: true });
+        const chunk = decoder.decode(value || new Uint8Array(), { stream: true });
+
+        // ✅ хамгаалалт: хаах маркер таарвал тасал
+        if (chunk.includes('[DONE]')) break;
+
+        acc += chunk;
 
         setMessages((prev) =>
           prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m)),
@@ -175,20 +180,31 @@ export default function Chat() {
         pointerEvents="none"
       />
 
-      {/* ✅ IMPORTANT: энэ container FULL HEIGHT байх ёстой */}
+      {/* ✅ Template доторх content area-д тааруулсан wrapper */}
       <Flex
         direction="column"
         mx="auto"
         w="100%"
         maxW="1000px"
         flex="1"
-        minH="calc(100vh - 80px)"  // ✅ хамгийн чухал: input дээшээ үсрэхгүй
+        minH="0"
+        height="100%"
         position="relative"
         px={{ base: '10px', md: '0px' }}
       >
-        {/* Model / Plugins */}
+        {/* ✅ 2 товч header-ийн цаагуур орохгүй байлгахын тулд top зай */}
+        <Box h={{ base: '10px', md: '0px' }} />
+
+        {/* Model / Plugins (2 button харагдана) */}
         <Flex direction="column" w="100%" mb="10px" flexShrink={0}>
-          <Flex mx="auto" zIndex="2" w="max-content" mb="16px" borderRadius="60px">
+          <Flex
+            mx="auto"
+            zIndex="2"
+            w="max-content"
+            mb="16px"
+            borderRadius="60px"
+            mt={{ base: '6px', md: '0px' }}
+          >
             <Flex
               cursor="pointer"
               transition="0.3s"
@@ -196,17 +212,25 @@ export default function Chat() {
               align="center"
               bg={model === 'gpt-3.5-turbo' ? buttonBg : 'transparent'}
               w="174px"
-              h="64px"
+              h="56px"
               boxShadow={model === 'gpt-3.5-turbo' ? buttonShadow : 'none'}
               borderRadius="14px"
               color={textColor}
-              fontSize="16px"
+              fontSize="15px"
               fontWeight="700"
               onClick={() => setModel('gpt-3.5-turbo')}
               border="1px solid"
               borderColor={model === 'gpt-3.5-turbo' ? BRAND : 'transparent'}
             >
-              <Flex borderRadius="full" justify="center" align="center" bg={bgIcon} me="10px" h="36px" w="36px">
+              <Flex
+                borderRadius="full"
+                justify="center"
+                align="center"
+                bg={bgIcon}
+                me="10px"
+                h="34px"
+                w="34px"
+              >
                 <Icon as={MdAutoAwesome} boxSize="18px" color={iconColor} />
               </Flex>
               GPT-3.5
@@ -219,17 +243,25 @@ export default function Chat() {
               align="center"
               bg={model === 'gpt-4o' ? buttonBg : 'transparent'}
               w="164px"
-              h="64px"
+              h="56px"
               boxShadow={model === 'gpt-4o' ? buttonShadow : 'none'}
               borderRadius="14px"
               color={textColor}
-              fontSize="16px"
+              fontSize="15px"
               fontWeight="700"
               onClick={() => setModel('gpt-4o')}
               border="1px solid"
               borderColor={model === 'gpt-4o' ? BRAND : 'transparent'}
             >
-              <Flex borderRadius="full" justify="center" align="center" bg={bgIcon} me="10px" h="36px" w="36px">
+              <Flex
+                borderRadius="full"
+                justify="center"
+                align="center"
+                bg={bgIcon}
+                me="10px"
+                h="34px"
+                w="34px"
+              >
                 <Icon as={MdBolt} boxSize="18px" color={iconColor} />
               </Flex>
               GPT-4o
@@ -261,7 +293,7 @@ export default function Chat() {
           </Accordion>
         </Flex>
 
-        {/* ✅ Messages = scrollable area */}
+        {/* ✅ Messages = зөвхөн энэ хэсэг л scroll болох ёстой */}
         <Flex
           direction="column"
           w="100%"
@@ -269,15 +301,16 @@ export default function Chat() {
           minH="0"
           overflowY="auto"
           px={{ base: '4px', md: '10px' }}
-          pb="160px"
+          // ✅ footer + input давхцахаас хамгаалсан padding (их байхаас айх хэрэггүй)
+          pb={{ base: '220px', md: '200px' }}
         >
           {messages.length === 0 ? (
-            <Flex direction="column" align="center" justify="center" mt="30px" opacity={0.9}>
-              <Text color={textColor} fontWeight="700">
-                Сайн уу 👋
+            <Flex direction="column" align="center" justify="center" mt="30px" opacity={0.95}>
+              <Text color={textColor} fontWeight="800" fontSize="lg" textAlign="center">
+                Сайн уу? 👋
               </Text>
               <Text color={gray} fontSize="sm" textAlign="center" mt="6px" maxW="520px">
-                Доор мессежээ бичээд Submit дар. (Enter = илгээх)
+                Сэтгэлийн туслагч Oyunsanaa байна. Танд юугаар туслах уу?
               </Text>
             </Flex>
           ) : (
@@ -297,11 +330,7 @@ export default function Chat() {
                     minW="36px"
                     mt="2px"
                   >
-                    <Icon
-                      as={isUser ? MdPerson : MdAutoAwesome}
-                      boxSize="18px"
-                      color={isUser ? BRAND : 'white'}
-                    />
+                    <Icon as={isUser ? MdPerson : MdAutoAwesome} boxSize="18px" color={isUser ? BRAND : 'white'} />
                   </Flex>
 
                   <Flex
@@ -348,12 +377,10 @@ export default function Chat() {
           <Box ref={bottomRef} />
         </Flex>
 
-        {/* ✅ INPUT BAR: absolute bottom (ХӨДЛӨХГҮЙ) */}
+        {/* ✅ INPUT BAR: content дотор доороо тогтмол (footer-ийг дарахгүйгээр) */}
         <Flex
-          position="absolute"
-          left="0"
-          right="0"
-          bottom="0"
+          position="sticky"
+          bottom={{ base: '0px', md: '0px' }}
           zIndex={50}
           bg={useColorModeValue('white', 'navy.900')}
           borderTop="1px solid"
