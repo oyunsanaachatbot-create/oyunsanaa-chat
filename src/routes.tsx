@@ -1,17 +1,15 @@
 // src/routes.ts
 import { IRoute } from '@/types/navigation';
-import {
-  Sparkles,
-  Brain,
-  HeartHandshake,
-  Target,
-  HeartPulse,
-  Coffee,
-  DollarSign,
-} from 'lucide-react';
-
-// Chakra-д icon JSX element байхад OK байдаг
 import { Icon } from '@chakra-ui/react';
+import {
+  FaRegStar,
+  FaBrain,
+  FaHandshake,
+  FaBullseye,
+  FaHeartPulse,
+  FaCoffee,
+  FaDollarSign,
+} from 'react-icons/fa6';
 
 export const routes: IRoute[] = [
   {
