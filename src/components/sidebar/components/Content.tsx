@@ -37,7 +37,7 @@ interface SidebarContentProps extends PropsWithChildren {
 }
 
 function SidebarContent(props: SidebarContentProps) {
-  const { setApiKey } = props;
+const { routes, setApiKey } = props;
 
   const textColor = useColorModeValue('navy.700', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
@@ -67,7 +67,7 @@ function SidebarContent(props: SidebarContentProps) {
 
       <Stack direction="column" mb="auto" mt="8px">
         <Box ps="0px" pe={{ md: '0px', '2xl': '0px' }}>
-          <LinksMenu />
+         <Links routes={routes} />
         </Box>
       </Stack>
 
