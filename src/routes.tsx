@@ -6,7 +6,7 @@ import {
   FaBrain,
   FaHandshake,
   FaBullseye,
- FaHeart,
+  FaHeart,
   FaMugHot,
   FaDollarSign,
 } from 'react-icons/fa';
@@ -23,7 +23,7 @@ export const routes: IRoute[] = [
       { name: 'Хэтрүүлж бодох хэв маяг', path: '/mind/emotion/control/overthinking' },
       { name: 'Стресс болон физиологийн хариу', path: '/mind/emotion/control/stress' },
       { name: 'Өөрийгөө удирдах чадвар', path: '/mind/emotion/control/calm' },
-      { name: 'Өнөөдрийн сэтгэл санаа апп', path: '/mind/emotion/control/daily-check', isApp: true as any },
+      { name: 'Өнөөдрийн сэтгэл санаа апп', path: '/mind/emotion/control/daily-check' },
     ],
   },
 
@@ -38,7 +38,7 @@ export const routes: IRoute[] = [
       { name: 'Дотоод ертөнц, зан чанар', path: '/mind/self/personality' },
       { name: 'Шарх, итгэл үнэмшил', path: '/mind/self/beliefs' },
       { name: 'Өөрийн үнэ цэнэ', path: '/mind/self/worth' },
-      { name: 'Миний ертөнц · Тэмдэглэл апп', path: '/mind/ebooks', isApp: true as any },
+      { name: 'Миний ертөнц · Тэмдэглэл апп', path: '/mind/ebooks' },
     ],
   },
 
@@ -46,7 +46,6 @@ export const routes: IRoute[] = [
     name: 'Харилцах ухаан',
     path: '/mind/relations',
     collapse: true,
-    
     icon: <Icon as={FaHandshake} w="18px" h="18px" />,
     items: [
       { name: 'Харилцааны суурь чадвар', path: '/mind/relations/foundation' },
@@ -56,7 +55,7 @@ export const routes: IRoute[] = [
       { name: 'Хил хязгаар тогтоох', path: '/mind/relations/boundary' },
       { name: 'Эрүүл бус (токсик) харилцааг таних', path: '/mind/relations/toxic' },
       { name: 'Зөрчил, маргааныг эрүүл шийдэх', path: '/mind/relations/conflict' },
-      { name: 'Харилцааны апп', path: '/mind/relations/foundation', isApp: true as any },
+      { name: 'Харилцааны апп', path: '/mind/relations/foundation' },
     ],
   },
 
@@ -71,7 +70,7 @@ export const routes: IRoute[] = [
       { name: 'Хүсэл мөрөөдөл', path: '/mind/purpose/dreams' },
       { name: 'Зорилгын төлөвлөлт', path: '/mind/purpose/planning' },
       { name: 'Хөгжлийн замнал', path: '/mind/purpose/growth-path' },
-      { name: 'Зорилго апп', path: '/mind/purpose/planning', isApp: true as any },
+      { name: 'Зорилго апп', path: '/mind/purpose/planning' },
     ],
   },
 
@@ -79,7 +78,7 @@ export const routes: IRoute[] = [
     name: 'Өөрийгөө хайрлах',
     path: '/mind/self-care',
     collapse: true,
-  icon: <Icon as={FaHeart} w="18px" h="18px" />,
+    icon: <Icon as={FaHeart} w="18px" h="18px" />,
     items: [
       { name: 'Сэтгэл санааг дэмжих', path: '/mind/self-care/emotional-support' },
       { name: 'Стресс ба ядаргаа', path: '/mind/self-care/stress' },
@@ -87,7 +86,7 @@ export const routes: IRoute[] = [
       { name: 'Өнөөдрийн хооллолт', path: '/mind/self-care/nutrition' },
       { name: 'Хоолны задаргаа оруулах', path: '/mind/self-care/food-log' },
       { name: 'Эмчилгээ / оношлогоо зөвлөмж', path: '/mind/self-care/treatment' },
-      { name: 'Эрүүл мэнд апп', path: '/mind/self-care/stress', isApp: true as any },
+      { name: 'Эрүүл мэнд апп', path: '/mind/self-care/stress' },
     ],
   },
 
@@ -103,7 +102,7 @@ export const routes: IRoute[] = [
       { name: 'Шийдвэр гаргах сэтгэлзүй', path: '/mind/life/decisions' },
       { name: 'Амьдралын орчин, стратеги', path: '/mind/life/environment' },
       { name: 'Миний санхүү (Бүртгэл)', path: '/mind/life/finance-app' },
-      { name: 'Миний санхүү апп', path: '/mind/life/finance-app', isApp: true as any },
+      { name: 'Миний санхүү апп', path: '/mind/life/finance-app' },
     ],
   },
 
@@ -117,8 +116,9 @@ export const routes: IRoute[] = [
       { name: 'Зорилтот хадгаламж', path: '/money/saving' },
       { name: 'Өрийн төлөвлөгөө', path: '/money/debt' },
       { name: 'Санхүүгийн зуршил', path: '/money/habits' },
-      { name: 'Санхүү апп', path: '/money/budget', isApp: true as any },
+      { name: 'Санхүү апп', path: '/money/budget' },
     ],
   },
 ];
+
 export default routes;
