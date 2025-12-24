@@ -29,11 +29,12 @@ import { MdOutlineManageAccounts, MdOutlineSettings } from 'react-icons/md';
 
 interface SidebarContentProps extends PropsWithChildren {
   setApiKey?: (key: string) => void;
+  onClose?: () => void; // ✅ mobile drawer хаах
   [x: string]: any;
 }
 
 export default function SidebarContent(props: SidebarContentProps) {
-  const { setApiKey } = props;
+  const { setApiKey, onClose } = props;
 
   const textColor = useColorModeValue('navy.700', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
@@ -50,20 +51,35 @@ export default function SidebarContent(props: SidebarContentProps) {
   const gray = useColorModeValue('gray.500', 'white');
 
   return (
-    <Flex direction="column" height="100%" pt="20px" pb="26px" borderRadius="30px" maxW="285px" px="20px">
+    <Flex
+      direction="column"
+      height="100%"
+      pt="20px"
+      pb="26px"
+      borderRadius="30px"
+      maxW="285px"
+      px="20px"
+    >
       <Brand />
 
       <Stack direction="column" mb="auto" mt="8px">
         <Box ps="0px" pe={{ md: '0px', '2xl': '0px' }}>
-          <Links />
+          {/* ✅ menu item дармагц mobile drawer хаагдана */}
+          <Links onClose={onClose} />
         </Box>
       </Stack>
 
       {/* ✅ PRO карт (SidebarCard) устгасан */}
-
       <APIModal setApiKey={setApiKey} sidebar={true} />
 
-      <Flex mt="8px" justifyContent="center" alignItems="center" boxShadow={shadowPillBar} borderRadius="30px" p="14px">
+      <Flex
+        mt="8px"
+        justifyContent="center"
+        alignItems="center"
+        boxShadow={shadowPillBar}
+        borderRadius="30px"
+        p="14px"
+      >
         <NextAvatar h="34px" w="34px" src={avatar4} me="10px" />
         <Text color={textColor} fontSize="xs" fontWeight="600" me="10px">
           Adela Parkson
@@ -88,7 +104,12 @@ export default function SidebarContent(props: SidebarContentProps) {
             color={iconColor}
           >
             <Flex align="center" justifyContent="center">
-              <Icon as={MdOutlineSettings} width="18px" height="18px" color="inherit" />
+              <Icon
+                as={MdOutlineSettings}
+                width="18px"
+                height="18px"
+                color="inherit"
+              />
             </Flex>
           </MenuButton>
 
@@ -106,11 +127,27 @@ export default function SidebarContent(props: SidebarContentProps) {
           >
             <Box mb="30px">
               <Flex align="center" w="100%" cursor={'not-allowed'}>
-                <Icon as={MdOutlineManageAccounts} width="24px" height="24px" color={gray} me="12px" opacity={'0.4'} />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity={'0.4'}>
+                <Icon
+                  as={MdOutlineManageAccounts}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  me="12px"
+                  opacity={'0.4'}
+                />
+                <Text
+                  color={gray}
+                  fontWeight="500"
+                  fontSize="sm"
+                  opacity={'0.4'}
+                >
                   Profile Settings
                 </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
                   <Badge
                     display={{ base: 'flex', lg: 'none', xl: 'flex' }}
                     colorScheme="brand"
@@ -128,11 +165,27 @@ export default function SidebarContent(props: SidebarContentProps) {
 
             <Box mb="30px">
               <Flex cursor={'not-allowed'} align="center">
-                <Icon as={LuHistory} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                <Icon
+                  as={LuHistory}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
+                <Text
+                  color={gray}
+                  fontWeight="500"
+                  fontSize="sm"
+                  opacity="0.4"
+                >
                   History
                 </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
                   <Badge
                     display={{ base: 'flex', lg: 'none', xl: 'flex' }}
                     colorScheme="brand"
@@ -150,11 +203,27 @@ export default function SidebarContent(props: SidebarContentProps) {
 
             <Box mb="30px">
               <Flex cursor={'not-allowed'} align="center">
-                <Icon as={RoundedChart} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                <Icon
+                  as={RoundedChart}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
+                <Text
+                  color={gray}
+                  fontWeight="500"
+                  fontSize="sm"
+                  opacity="0.4"
+                >
                   Usage
                 </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
                   <Badge
                     display={{ base: 'flex', lg: 'none', xl: 'flex' }}
                     colorScheme="brand"
@@ -172,11 +241,27 @@ export default function SidebarContent(props: SidebarContentProps) {
 
             <Box>
               <Flex cursor={'not-allowed'} align="center">
-                <Icon as={IoMdPerson} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                <Icon
+                  as={IoMdPerson}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
+                <Text
+                  color={gray}
+                  fontWeight="500"
+                  fontSize="sm"
+                  opacity="0.4"
+                >
                   My Plan
                 </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
                   <Badge
                     display={{ base: 'flex', lg: 'none', xl: 'flex' }}
                     colorScheme="brand"
