@@ -2,7 +2,7 @@
 
 import React, { ReactNode, useEffect, useState } from 'react';
 import { Box, Portal, useDisclosure } from '@chakra-ui/react';
-import { routes } from '@/routes';
+import routes from '@/routes';
 import Sidebar from '@/components/sidebar/Sidebar';
 import Footer from '@/components/footer/FooterAdmin';
 import Navbar from '@/components/navbar/NavbarAdmin';
@@ -23,7 +23,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <Box>
-   <Sidebar routes={routes} />
+      <Sidebar setApiKey={setApiKey} routes={routes} />
 
       <Box
         pt={{ base: '60px', md: '100px' }}
