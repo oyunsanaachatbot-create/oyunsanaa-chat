@@ -1,10 +1,28 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { Brain, MessageCircle, Sparkles, Check, ArrowLeft, X, Search } from 'lucide-react';
+import NextLink from 'next/link';
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Heading,
+  HStack,
+  Icon,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  InputRightElement,
+  Stack,
+  Text,
+  useColorModeValue,
+} from '@chakra-ui/react';
+import { Brain, MessageCircle, Sparkles, Check, Search, X, ArrowLeft } from 'lucide-react';
 
 type Section = { id: string; title: string; paragraphs: string[] };
+
+const BRAND = 'var(--brand, #1F6FB2)';
 
 const SECTIONS: Section[] = [
   {
@@ -26,10 +44,7 @@ const SECTIONS: Section[] = [
   {
     id: 'understand',
     title: 'Юуг ойлгох ёстой вэ?',
-    paragraphs: [
-      'Мэдрэмж бол тушаал биш, мэдээлэл юм.',
-      'Тэднийг уншиж сурвал реакц биш сонголт хийдэг болно.',
-    ],
+    paragraphs: ['Мэдрэмж бол тушаал биш, мэдээлэл юм.', 'Тэднийг уншиж сурвал реакц биш сонголт хийдэг болно.'],
   },
   {
     id: 'skills',
@@ -37,7 +52,7 @@ const SECTIONS: Section[] = [
     paragraphs: [
       'Эхний ур чадвар бол ажиглалт — юу болж байгааг шүүлтгүйгээр анзаарах.',
       'Дараагийнх нь нэршил — мэдрэмжээ ерөнхий биш, илүү тодорхой нэрлэх (ж: “түгшсэн”, “гомдсон”, “ичсэн”).',
-      'Гурав дахь нь өөртөө эелдэг хандах чадвар: өөрийгөө буруутгахын оронд ойлгож хүлээн зөвшөөрөх дадал.',
+      'Гурав дахь нь өөртөө эелдэг хандах: өөрийгөө буруутгахын оронд ойлгож хүлээн зөвшөөрөх дадал.',
     ],
   },
   {
@@ -51,182 +66,193 @@ const SECTIONS: Section[] = [
 ];
 
 export default function AwarenessApp() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [q, setQ] = useState('');
+  const [openId, setOpenId] = useState<string | null>('what');
 
-  const toggleIndex = (idx: number) => setOpenIndex((prev) => (prev === idx ? null : idx));
+  const pageBg = useColorModeValue('#F6FAFF', '#0A0F1A');
+  const cardBg = useColorModeValue('rgba(255,255,255,0.72)', 'rgba(17,25,40,0.55)');
+  const border = useColorModeValue('rgba(0,0,0,0.08)', 'rgba(255,255,255,0.12)');
+  const textSub = useColorModeValue('blackAlpha.700', 'whiteAlpha.700');
 
-  // ✅ хайлтын үр дүн — title + paragraphs дотор таарвал гаргана
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     if (!query) return SECTIONS;
-
-    return SECTIONS.filter((s) => {
-      const hay = (s.title + ' ' + s.paragraphs.join(' ')).toLowerCase();
-      return hay.includes(query);
-    });
+    return SECTIONS.filter((s) => (s.title + ' ' + s.paragraphs.join(' ')).toLowerCase().includes(query));
   }, [q]);
 
   return (
-    <div className="min-h-screen relative overflow-hidden text-white" style={{ ['--brand' as any]: 'var(--brand)' }}>
-      {/* Background (өөрчлөхгүй) */}
-      <div
-        className="absolute inset-0 -z-10"
-        style={{
-          background: `
-            radial-gradient(900px 520px at 20% 15%, rgba(62,111,150,.28), transparent 60%),
-            radial-gradient(900px 520px at 85% 25%, rgba(62,111,150,.18), transparent 62%),
-            linear-gradient(135deg, #2a4663 0%, #335b7a 100%)
-          `,
-        }}
-      />
-
-      <main className="relative z-10 px-4 py-8 flex justify-center">
-        <div className="w-full max-w-3xl rounded-3xl border border-white/20 bg-white/10 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,.35)] px-5 py-6 space-y-6">
-          {/* Header row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-white/80">
-              <span
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border"
-                style={{ background: 'rgba(62,111,150,.18)', borderColor: 'rgba(62,111,150,.45)' }}
-              >
-                <Brain size={16} style={{ color: 'var(--brand)' }} />
-              </span>
-              <span className="font-medium">Миний сэтгэлзүй</span>
-            </div>
-
-            {/* ✅ баруун тал — Chat + Back/Close */}
-            <div className="flex items-center gap-2">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white/80 hover:bg-white/20 transition"
-              >
-                <MessageCircle size={14} style={{ color: 'var(--brand)' }} />
-                Чат
-              </Link>
-
-              {/* Back (хэрвээ хүсвэл X болгож болно) */}
-              <button
-                type="button"
-                onClick={() => history.back()}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 transition"
-                aria-label="Back"
-              >
-                <ArrowLeft size={16} style={{ color: 'var(--brand)' }} />
-              </button>
-
-              {/* Close (optional) */}
-              <button
-                type="button"
-                onClick={() => history.back()}
-                className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 transition"
-                aria-label="Close"
-              >
-                <X size={16} style={{ color: 'var(--brand)' }} />
-              </button>
-            </div>
-          </div>
-
-          {/* ✅ Search bar (header-ээс доош, контент дээр төвлөрсөн) */}
-          <div className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-3 py-2">
-            <Search size={16} className="opacity-80" style={{ color: 'var(--brand)' }} />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Хайх... (ж: түгш, уур, айдас)"
-              className="w-full bg-transparent outline-none text-sm placeholder:text-white/40"
-            />
-            {q ? (
-              <button
-                type="button"
-                onClick={() => setQ('')}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-white/10 hover:bg-white/20 transition"
-                aria-label="Clear search"
-              >
-                <X size={14} className="opacity-80" />
-              </button>
-            ) : null}
-          </div>
-
-          {/* Intro */}
-          <section className="space-y-3">
-            <div
-              className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs tracking-widest uppercase"
-              style={{
-                color: 'var(--brand)',
-                background: 'rgba(62,111,150,.15)',
-                borderColor: 'rgba(62,111,150,.35)',
-              }}
+    <Box minH="100vh" bg={pageBg} px={{ base: 4, md: 6 }} py={{ base: 5, md: 6 }}>
+      <Box maxW="3xl" mx="auto">
+        {/* жижиг header (Horizon-ийн том header-ийг орлохгүй, давхардахгүй) */}
+        <Flex align="center" justify="space-between" mb={4}>
+          <HStack spacing={2}>
+            <Box
+              w="34px"
+              h="34px"
+              borderRadius="999px"
+              border="1px solid"
+              borderColor={border}
+              bg={cardBg}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
             >
-              <Sparkles size={14} />
+              <Icon as={Brain as any} boxSize="18px" color={BRAND} />
+            </Box>
+            <Text fontWeight="700" fontSize="sm" opacity={0.85}>
+              Миний сэтгэлзүй
+            </Text>
+          </HStack>
+
+          <HStack spacing={2}>
+            <Button
+              as={NextLink}
+              href="/"
+              size="sm"
+              variant="outline"
+              borderColor={border}
+              bg={cardBg}
+              leftIcon={<Icon as={MessageCircle as any} boxSize="16px" color={BRAND} />}
+            >
+              Чат
+            </Button>
+
+            {/* page-level back (чиний хүссэн сум/Х-тэй адил) */}
+            <Button
+              size="sm"
+              variant="outline"
+              borderColor={border}
+              bg={cardBg}
+              onClick={() => history.back()}
+              leftIcon={<Icon as={ArrowLeft as any} boxSize="16px" color={BRAND} />}
+            >
+              Буцах
+            </Button>
+          </HStack>
+        </Flex>
+
+        {/* card */}
+        <Box borderRadius="24px" border="1px solid" borderColor={border} bg={cardBg} backdropFilter="blur(16px)" p={{ base: 5, md: 6 }}>
+          <Stack spacing={5}>
+            <Badge
+              w="fit-content"
+              px={3}
+              py={1.5}
+              borderRadius="999px"
+              bg={useColorModeValue('rgba(31,111,178,0.10)', 'rgba(31,111,178,0.18)')}
+              color={BRAND}
+              textTransform="none"
+              fontWeight="800"
+              display="inline-flex"
+              alignItems="center"
+              gap={2}
+            >
+              <Icon as={Sparkles as any} boxSize="14px" />
               Сэтгэл хөдлөл
-            </div>
+            </Badge>
 
-            <h1 className="text-2xl sm:text-3xl font-light tracking-wide">
-              Сэтгэл дотроо юу болж
-              <br /> байгааг мэдэрч сурья
-            </h1>
+            <Box>
+              <Heading size="lg" fontWeight="800" letterSpacing="-0.6px">
+                Сэтгэл дотроо юу болж
+                <br /> байгааг мэдэрч суръя
+              </Heading>
+              <Text mt={2} fontSize="sm" color={textSub} lineHeight="1.7">
+                Өөрийн дотоод хөдөлгөөнийг ажиглаж, нэрлэж, ойлгох дадлыг эндээс эхлүүлнэ.
+              </Text>
+            </Box>
 
-            <p className="text-white/75 text-sm leading-relaxed">
-              Өөрийн дотоод хөдөлгөөнийг ажиглаж, нэрлэж, ойлгох дадлыг эндээс эхлүүлнэ.
-            </p>
-
-            {/* хайлтын статистик */}
-            {q ? (
-              <p className="text-white/60 text-xs">
-                “{q}” — {filtered.length} хэсэг олдлоо
-              </p>
-            ) : null}
-          </section>
-
-          {/* Accordion (хоосон цонх биш — доороо текст нээгдэнэ) */}
-          <section className="space-y-3">
-            {filtered.map((item, idx) => {
-              // ⚠️ filtered ашиглаж байгаа тул idx нь “харагдаж буй жагсаалтын” индекс
-              const isOpen = openIndex === idx;
-
-              return (
-                <div key={item.id} className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl overflow-hidden">
-                  <button
-                    onClick={() => toggleIndex(idx)}
-                    className="flex w-full justify-between px-4 py-3 text-left text-sm hover:bg-white/10 transition"
+            {/* search */}
+            <InputGroup>
+              <InputLeftElement pointerEvents="none">
+                <Icon as={Search as any} boxSize="16px" color={BRAND} opacity={0.9} />
+              </InputLeftElement>
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Хайх... (ж: түгш, уур, айдас)"
+                bg={useColorModeValue('whiteAlpha.700', 'whiteAlpha.100')}
+                borderColor={border}
+              />
+              {q ? (
+                <InputRightElement>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => setQ('')}
+                    aria-label="clear"
+                    borderRadius="999px"
                   >
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs"
-                        style={{
-                          background: 'rgba(62,111,150,.18)',
-                          borderColor: 'rgba(62,111,150,.45)',
-                          color: 'var(--brand)',
-                        }}
-                      >
-                        {idx + 1}
-                      </span>
-                      {item.title}
-                    </span>
+                    <Icon as={X as any} boxSize="14px" />
+                  </Button>
+                </InputRightElement>
+              ) : null}
+            </InputGroup>
 
-                    <Check size={14} style={{ color: 'var(--brand)' }} />
-                  </button>
+            {/* accordion list (inline expand) */}
+            <Stack spacing={3}>
+              {filtered.map((s, idx) => {
+                const isOpen = openId === s.id;
 
-                  {isOpen && (
-                    <div className="px-4 pb-4 pt-2 space-y-2 border-t border-white/10 text-white/80 text-sm leading-relaxed">
-                      {item.paragraphs.map((p, i) => (
-                        <p key={i}>{p}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                return (
+                  <Box key={s.id} borderRadius="18px" border="1px solid" borderColor={border} overflow="hidden">
+                    <Button
+                      w="100%"
+                      variant="ghost"
+                      justifyContent="space-between"
+                      px={4}
+                      py={6}
+                      borderRadius="0"
+                      onClick={() => setOpenId((prev) => (prev === s.id ? null : s.id))}
+                      _hover={{ bg: useColorModeValue('blackAlpha.50', 'whiteAlpha.100') }}
+                    >
+                      <HStack spacing={3}>
+                        <Box
+                          w="26px"
+                          h="26px"
+                          borderRadius="999px"
+                          border="1px solid"
+                          borderColor={border}
+                          bg={useColorModeValue('white', 'blackAlpha.300')}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          fontSize="12px"
+                          fontWeight="900"
+                          color={BRAND}
+                        >
+                          {idx + 1}
+                        </Box>
+                        <Text fontSize="sm" fontWeight="800" textAlign="left">
+                          {s.title}
+                        </Text>
+                      </HStack>
+                      <Icon as={Check as any} boxSize="16px" color={BRAND} opacity={0.9} />
+                    </Button>
 
-            {q && filtered.length === 0 ? (
-              <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-4 text-white/70 text-sm">
-                Олдсонгүй. Өөр үгээр хайгаад үзээрэй (ж: “айдас”, “уур”, “түгш”).
-              </div>
-            ) : null}
-          </section>
-        </div>
-      </main>
-    </div>
+                    {isOpen ? (
+                      <Box px={4} pb={4} pt={1} borderTop="1px solid" borderColor={border}>
+                        <Stack spacing={2}>
+                          {s.paragraphs.map((p, i) => (
+                            <Text key={i} fontSize="sm" color={textSub} lineHeight="1.75">
+                              {p}
+                            </Text>
+                          ))}
+                        </Stack>
+                      </Box>
+                    ) : null}
+                  </Box>
+                );
+              })}
+
+              {q && filtered.length === 0 ? (
+                <Box borderRadius="18px" border="1px solid" borderColor={border} p={4} color={textSub} fontSize="sm">
+                  Олдсонгүй. Өөр үгээр хайгаад үзээрэй.
+                </Box>
+              ) : null}
+            </Stack>
+          </Stack>
+        </Box>
+      </Box>
+    </Box>
   );
 }
