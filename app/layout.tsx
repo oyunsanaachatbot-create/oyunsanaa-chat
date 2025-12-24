@@ -1,15 +1,12 @@
 'use client';
-import React, { ReactNode } from 'react';
-import type { AppProps } from 'next/app';
-import { ChakraProvider, Box, Portal, useDisclosure } from '@chakra-ui/react';
-import theme from '@/theme/theme';
+import React, { ReactNode, useEffect, useState } from 'react';
+import { Box, Portal, useDisclosure, Flex } from '@chakra-ui/react';
 import routes from '@/routes';
 import Sidebar from '@/components/sidebar/Sidebar';
 import Footer from '@/components/footer/FooterAdmin';
 import Navbar from '@/components/navbar/NavbarAdmin';
 import { getActiveRoute, getActiveNavbar } from '@/utils/navigation';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import '@/styles/App.css';
 import '@/styles/Contact.css';
 import '@/styles/Plugins.css';
@@ -20,39 +17,38 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [apiKey, setApiKey] = useState('');
   const { isOpen, onOpen, onClose } = useDisclosure();
+
   useEffect(() => {
     const initialKey = localStorage.getItem('apiKey');
-    console.log(initialKey);
     if (initialKey?.includes('sk-') && apiKey !== initialKey) {
       setApiKey(initialKey);
     }
   }, [apiKey]);
 
+  const isAuthPage =
+    pathname?.includes('register') || pathname?.includes('sign-in');
+
   return (
     <html lang="en">
-      <body id={'root'}>
+      <body id="root">
         <AppWrappers>
-          {/* <ChakraProvider theme={theme}> */}
-          {pathname?.includes('register') || pathname?.includes('sign-in') ? (
+          {isAuthPage ? (
             children
           ) : (
-            <Box>
+            // ✅ хамгийн чухал: root container нь 100vh + overflow hidden
+            <Flex w="100%" h="100vh" overflow="hidden">
               <Sidebar setApiKey={setApiKey} routes={routes} />
-              <Box
-                pt={{ base: '60px', md: '100px' }}
-                float="right"
-                minHeight="100vh"
-                height="100%"
-                overflow="auto"
+
+              {/* ✅ Right content area: sidebar-тай мөргөлдөхгүй, дангаараа scroll */}
+              <Flex
+                direction="column"
+                w={{ base: '100%', xl: 'calc(100% - 290px)' }}
+                maxW={{ base: '100%', xl: 'calc(100% - 290px)' }}
+                ms={{ base: 0, xl: '290px' }} // ✅ float биш, margin-left
                 position="relative"
-                maxHeight="100%"
-                w={{ base: '100%', xl: 'calc( 100% - 290px )' }}
-                maxWidth={{ base: '100%', xl: 'calc( 100% - 290px )' }}
-                transition="all 0.33s cubic-bezier(0.685, 0.0473, 0.346, 1)"
-                transitionDuration=".2s, .2s, .35s"
-                transitionProperty="top, bottom, width"
-                transitionTimingFunction="linear, linear, ease"
+                minH="0"
               >
+                {/* Navbar Portal хэвээр */}
                 <Portal>
                   <Box>
                     <Navbar
@@ -64,23 +60,36 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                     />
                   </Box>
                 </Portal>
+
+                {/* ✅ Scroll container (Navbar-ийн зайг pt-ээр өгнө) */}
                 <Box
-                  mx="auto"
-                  p={{ base: '20px', md: '30px' }}
-                  pe="20px"
-                  minH="100vh"
-                  pt="50px"
+                  pt={{ base: '60px', md: '100px' }}
+                  flex="1"
+                  minH="0"
+                  overflowY="auto"
+                  overflowX="hidden"
+                  // iOS дээр scroll жигд болгоно
+                  sx={{ WebkitOverflowScrolling: 'touch' }}
                 >
-                  {children}
-                  {/* <Component apiKeyApp={apiKey} {...pageProps} /> */}
+                  {/* Content */}
+                  <Box
+                    mx="auto"
+                    p={{ base: '20px', md: '30px' }}
+                    pe="20px"
+                    pt="50px"
+                    minH="0"
+                  >
+                    {children}
+                  </Box>
+
+                  {/* Footer */}
+                  <Box>
+                    <Footer />
+                  </Box>
                 </Box>
-                <Box>
-                  <Footer />
-                </Box>
-              </Box>
-            </Box>
+              </Flex>
+            </Flex>
           )}
-          {/* </ChakraProvider> */}
         </AppWrappers>
       </body>
     </html>
