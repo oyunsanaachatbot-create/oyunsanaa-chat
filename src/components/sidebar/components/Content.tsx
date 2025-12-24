@@ -21,7 +21,8 @@ import avatar4 from '/public/img/avatars/avatar4.png';
 import { NextAvatar } from '@/components/image/Avatar';
 import APIModal from '@/components/apiModal';
 import Brand from '@/components/sidebar/components/Brand';
-import LinksMenu from '@/components/sidebar/components/LinksMenu';
+import Links from '@/components/sidebar/components/Links';
+import { IRoute } from '@/types/navigation';
 import { RoundedChart } from '@/components/icons/Icons';
 import { PropsWithChildren } from 'react';
 import { IoMdPerson } from 'react-icons/io';
@@ -30,6 +31,7 @@ import { LuHistory } from 'react-icons/lu';
 import { MdOutlineManageAccounts, MdOutlineSettings } from 'react-icons/md';
 
 interface SidebarContentProps extends PropsWithChildren {
+  routes: IRoute[];
   setApiKey?: (key: string) => void;
   [x: string]: any;
 }
