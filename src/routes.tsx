@@ -1,233 +1,124 @@
-import { Icon } from './lib/chakra';
+// src/routes.ts
+import { IRoute } from '@/types/navigation';
 import {
-  MdFileCopy,
-  MdHome,
-  MdLock,
-  MdLayers,
-  MdAutoAwesome,
-  MdOutlineManageAccounts,
-} from 'react-icons/md';
-import { IoMdPerson } from 'react-icons/io';
-import { LuHistory } from 'react-icons/lu';
-import { RoundedChart } from '@/components/icons/Icons';
+  Sparkles,
+  Brain,
+  HeartHandshake,
+  Target,
+  HeartPulse,
+  Coffee,
+  DollarSign,
+} from 'lucide-react';
 
-// Auth Imports
-import { IRoute } from './types/navigation';
+// Chakra-д icon JSX element байхад OK байдаг
+import { Icon } from '@chakra-ui/react';
 
-const routes: IRoute[] = [
+export const routes: IRoute[] = [
   {
-    name: 'Chat UI',
-    path: '/',
-    icon: (
-      <Icon as={MdAutoAwesome} width="20px" height="20px" color="inherit" />
-    ),
-    collapse: false,
-  },
-  {
-    name: 'All Templates',
-    disabled: true,
-    path: '/all-templates',
-    icon: <Icon as={MdHome} width="20px" height="20px" color="inherit" />,
-    collapse: false,
-  },
-  {
-    name: 'My Projects',
-    disabled: true,
-    path: '/my-projects',
-    icon: <Icon as={MdLayers} width="20px" height="20px" color="inherit" />,
-    collapse: false,
-  },
-  // --- Others ---
-  {
-    name: 'Other Pages',
-    disabled: true,
-    path: '/others',
-    icon: <Icon as={MdFileCopy} width="20px" height="20px" color="inherit" />,
+    name: 'Миний сэтгэлзүй',
+    path: '/mind/emotion/control',
     collapse: true,
+    icon: <Icon as={Sparkles} w="18px" h="18px" />,
     items: [
-      {
-        name: 'Prompt Page',
-        layout: '/others',
-        path: '/prompt',
-      },
-      {
-        name: 'Register',
-        layout: '/others',
-        path: '/register',
-      },
-      {
-        name: 'Sign In',
-        layout: '/others',
-        path: '/sign-in',
-      },
+      { name: 'Сэтгэл хөдлөлөө мэдрэх', path: '/mind/emotion/control/awareness' },
+      { name: 'Бодол, хариу үйлдэл', path: '/mind/emotion/control/thoughts' },
+      { name: 'Хэтрүүлж бодох хэв маяг', path: '/mind/emotion/control/overthinking' },
+      { name: 'Стресс болон физиологийн хариу', path: '/mind/emotion/control/stress' },
+      { name: 'Өөрийгөө удирдах чадвар', path: '/mind/emotion/control/calm' },
+      { name: 'Өнөөдрийн сэтгэл санаа апп', path: '/mind/emotion/control/daily-check' },
     ],
   },
-  // --- Admin Pages ---
+
   {
-    name: 'Admin Pages',
-    disabled: true,
-    path: '/admin',
-    icon: <Icon as={MdLock} width="20px" height="20px" color="inherit" />,
+    name: 'Өөрийгөө ойлгох',
+    path: '/mind/self',
     collapse: true,
+    icon: <Icon as={Brain} w="18px" h="18px" />,
     items: [
-      {
-        name: 'All Templates',
-        layout: '/admin',
-        path: '/all-admin-templates',
-      },
-      {
-        name: 'New Template',
-        layout: '/admin',
-        path: '/new-template',
-      },
-      {
-        name: 'Edit Template',
-        layout: '/admin',
-        path: '/edit-template',
-      },
-      {
-        name: 'Users Overview',
-        layout: '/admin',
-        path: '/overview',
-      },
+      { name: 'Би хэн бэ?', path: '/mind/self/identity' },
+      { name: 'Миний үнэт зүйл', path: '/mind/self/values' },
+      { name: 'Дотоод ертөнц, зан чанар', path: '/mind/self/personality' },
+      { name: 'Шарх, итгэл үнэмшил', path: '/mind/self/beliefs' },
+      { name: 'Өөрийн үнэ цэнэ', path: '/mind/self/worth' },
+      { name: 'Миний ертөнц · Тэмдэглэл апп', path: '/mind/ebooks' },
     ],
   },
+
   {
-    name: 'Profile Settings',
-    disabled: true,
-    path: '/settings',
-    icon: (
-      <Icon
-        as={MdOutlineManageAccounts}
-        width="20px"
-        height="20px"
-        color="inherit"
-      />
-    ),
-    invisible: true,
-    collapse: false,
+    name: 'Харилцах ухаан',
+    path: '/mind/relations',
+    collapse: true,
+    icon: <Icon as={HeartHandshake} w="18px" h="18px" />,
+    items: [
+      { name: 'Харилцааны суурь чадвар', path: '/mind/relations/foundation' },
+      { name: 'Өөрийгөө илэрхийлэх', path: '/mind/relations/expression' },
+      { name: 'Бусдыг ойлгох ба эмпати', path: '/mind/relations/empathy' },
+      { name: 'Сонсох ур чадвар', path: '/mind/relations/listening' },
+      { name: 'Хил хязгаар тогтоох', path: '/mind/relations/boundary' },
+      { name: 'Эрүүл бус (токсик) харилцааг таних', path: '/mind/relations/toxic' },
+      { name: 'Зөрчил, маргааныг эрүүл шийдэх', path: '/mind/relations/conflict' },
+      { name: 'Харилцааны апп', path: '/mind/relations/foundation' },
+    ],
   },
+
   {
-    name: 'History',
-    disabled: true,
-    path: '/history',
-    icon: <Icon as={LuHistory} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
+    name: 'Зорилго ба утга учир',
+    path: '/mind/purpose',
+    collapse: true,
+    icon: <Icon as={Target} w="18px" h="18px" />,
+    items: [
+      { name: 'Миний утга учир', path: '/mind/purpose/meaning' },
+      { name: 'Амьдралын том зураг', path: '/mind/purpose/vision' },
+      { name: 'Хүсэл мөрөөдөл', path: '/mind/purpose/dreams' },
+      { name: 'Зорилгын төлөвлөлт', path: '/mind/purpose/planning' },
+      { name: 'Хөгжлийн замнал', path: '/mind/purpose/growth-path' },
+      { name: 'Зорилго апп', path: '/mind/purpose/planning' },
+    ],
   },
+
   {
-    name: 'Usage',
-    disabled: true,
-    path: '/usage',
-    icon: <Icon as={RoundedChart} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
+    name: 'Өөрийгөө хайрлах',
+    path: '/mind/self-care',
+    collapse: true,
+    icon: <Icon as={HeartPulse} w="18px" h="18px" />,
+    items: [
+      { name: 'Сэтгэл санааг дэмжих', path: '/mind/self-care/emotional-support' },
+      { name: 'Стресс ба ядаргаа', path: '/mind/self-care/stress' },
+      { name: 'Өдрийн эрч хүч ба нойр', path: '/mind/self-care/energy-sleep' },
+      { name: 'Өнөөдрийн хооллолт', path: '/mind/self-care/nutrition' },
+      { name: 'Хоолны задаргаа оруулах', path: '/mind/self-care/food-log' },
+      { name: 'Эмчилгээ / оношлогоо зөвлөмж', path: '/mind/self-care/treatment' },
+      { name: 'Эрүүл мэнд апп', path: '/mind/self-care/stress' },
+    ],
   },
+
   {
-    name: 'My plan',
-    disabled: true,
-    path: '/my-plan',
-    icon: <Icon as={RoundedChart} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
+    name: 'Тогтвортой амьдрал',
+    path: '/mind/life',
+    collapse: true,
+    icon: <Icon as={Coffee} w="18px" h="18px" />,
+    items: [
+      { name: 'Миний стрессийн эх үүсвэр', path: '/mind/life/stress-source' },
+      { name: 'Санхүүгийн сэтгэлзүй', path: '/mind/life/money-mindset' },
+      { name: 'Ажлын стресс ба орчин', path: '/mind/life/work-stress' },
+      { name: 'Шийдвэр гаргах сэтгэлзүй', path: '/mind/life/decisions' },
+      { name: 'Амьдралын орчин, стратеги', path: '/mind/life/environment' },
+      { name: 'Миний санхүү (Бүртгэл)', path: '/mind/life/finance-app' },
+      { name: 'Миний санхүү апп', path: '/mind/life/finance-app' },
+    ],
   },
-  // -------------- Prompt Pages --------------
+
   {
-    name: 'Essay Generator',
-    disabled: true,
-    path: '/essay',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'Content Simplifier',
-    disabled: true,
-    path: '/simplifier',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'Product Description',
-    disabled: true,
-    path: '/product-description',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'Email Enhancer',
-    disabled: true,
-    path: '/email-enhancer',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'LinkedIn Message',
-    disabled: true,
-    path: '/linkedin-message',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'Instagram Caption',
-    disabled: true,
-    path: '/caption',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'FAQs Content',
-    disabled: true,
-    path: '/faq',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'Product Name Generator',
-    disabled: true,
-    path: '/name-generator',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'SEO Keywords',
-    disabled: true,
-    path: '/seo-keywords',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'Review Responder',
-    disabled: true,
-    path: '/review-responder',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'Business Idea Generator',
-    disabled: true,
-    path: '/business-generator',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
-  },
-  {
-    name: 'Article Generator',
-    disabled: true,
-    path: '/article',
-    icon: <Icon as={IoMdPerson} width="20px" height="20px" color="inherit" />,
-    invisible: true,
-    collapse: false,
+    name: 'Санхүү',
+    path: '/money',
+    collapse: true,
+    icon: <Icon as={DollarSign} w="18px" h="18px" />,
+    items: [
+      { name: 'Орлого/Зардлын бүртгэл', path: '/money/budget' },
+      { name: 'Зорилтот хадгаламж', path: '/money/saving' },
+      { name: 'Өрийн төлөвлөгөө', path: '/money/debt' },
+      { name: 'Санхүүгийн зуршил', path: '/money/habits' },
+      { name: 'Санхүү апп', path: '/money/budget' },
+    ],
   },
 ];
-
-export default routes;
