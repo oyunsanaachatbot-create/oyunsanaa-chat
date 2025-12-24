@@ -70,7 +70,7 @@ export default function HeaderLinks(props: {
         me="10px"
         borderRadius="30px"
       />
-      <SidebarResponsive routes={routes} />
+   
       <APIModal setApiKey={setApiKey} />
 
       <Menu>
