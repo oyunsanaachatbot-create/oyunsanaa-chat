@@ -1,40 +1,43 @@
 export const runtime = 'nodejs';
 
-type ReqBody = {
-  inputCode: string;
-  model?: string;
-};
-
-export async function GET() {
-  return new Response('OK. Use POST /api/chatAPI', { status: 200 });
-}
-
-export async function POST(req: Request): Promise<Response> {
+export async function POST(req: Request) {
   try {
-    const { inputCode, model } = (await req.json()) as ReqBody;
-
-    if (!inputCode || typeof inputCode !== 'string') {
-      return new Response('Missing inputCode', { status: 400 });
-    }
+    const { inputCode, model } = (await req.json()) as {
+      inputCode: string;
+      model?: string;
+    };
 
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return new Response('Missing OPENAI_API_KEY', { status: 400 });
+    if (!apiKey) return new Response('Missing OPENAI_API_KEY', { status: 400 });
+    if (!inputCode?.trim()) return new Response('Missing inputCode', { status: 400 });
+
+    const upstream = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || 'gpt-4o-mini',
+        input: [
+          { role: 'user', content: [{ type: 'input_text', text: inputCode }] },
+        ],
+        stream: true,
+      }),
+    });
+
+    if (!upstream.ok) {
+      const t = await upstream.text().catch(() => upstream.statusText);
+      return new Response(t, { status: upstream.status });
     }
 
-    // ✅ Танай OpenAIStream helper-ийг хэвээр ашиглая
-    const { OpenAIStream } = await import('@/utils/chatStream');
-
-    const stream = await OpenAIStream(inputCode, model || 'gpt-4o', apiKey);
-
-    return new Response(stream, {
+    return new Response(upstream.body, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache, no-transform',
       },
     });
-  } catch (error) {
-    console.error(error);
-    return new Response('Error', { status: 500 });
+  } catch (e: any) {
+    return new Response(e?.message || 'Error', { status: 500 });
   }
 }
