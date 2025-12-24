@@ -32,6 +32,8 @@ export default function Links() {
   const activeText = useColorModeValue('navy.700', 'white');
   const inactiveText = useColorModeValue('gray.600', 'gray.400');
   const divider = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const hoverBg = useColorModeValue('gray.50', 'whiteAlpha.100');
+  const activeBg = useColorModeValue('gray.100', 'whiteAlpha.200');
 
   // ✅ бүгд хаалттай эхэлнэ
   const [openIndexes, setOpenIndexes] = useState<number[]>([]);
@@ -41,7 +43,7 @@ export default function Links() {
     setOpenIndexes(arr.filter((n) => typeof n === 'number'));
   };
 
-  // ✅ sidebar-аас гадуур дарвал бүгд хаах
+  // ✅ sidebar/menu хэсгээс гадуур дарвал бүгд хаах
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
       const el = rootRef.current;
@@ -58,7 +60,7 @@ export default function Links() {
   const openSet = useMemo(() => new Set(openIndexes), [openIndexes]);
 
   return (
-    <Box ref={rootRef}>
+    <Box ref={rootRef} w="100%">
       <Accordion allowMultiple index={openIndexes} onChange={setFromChakra}>
         {MENU_CONFIG.map((group, idx) => {
           const GroupIcon = group.icon;
@@ -70,7 +72,7 @@ export default function Links() {
                 px="12px"
                 py="10px"
                 borderRadius="12px"
-                _hover={{ bg: useColorModeValue('gray.50', 'whiteAlpha.100') }}
+                _hover={{ bg: hoverBg }}
                 _focus={{ boxShadow: 'none' }}
               >
                 <Flex w="100%" align="center" justify="space-between">
@@ -101,7 +103,6 @@ export default function Links() {
 
                     return (
                       <ListItem key={`${group.id}-${item.id}`}>
-                        {/* ✅ NEXT LINK + CHAKRA LINK: click 100% ажиллана */}
                         <ChakraLink
                           as={NextLink}
                           href={item.href}
@@ -112,25 +113,14 @@ export default function Links() {
                           py="8px"
                           borderRadius="10px"
                           textDecoration="none"
-                          _hover={{
-                            textDecoration: 'none',
-                            bg: useColorModeValue('gray.50', 'whiteAlpha.100'),
-                          }}
-                          bg={
-                            isActive
-                              ? useColorModeValue('gray.100', 'whiteAlpha.200')
-                              : 'transparent'
-                          }
+                          _hover={{ textDecoration: 'none', bg: hoverBg }}
+                          bg={isActive ? activeBg : 'transparent'}
                         >
                           <Text
                             fontSize="sm"
                             fontWeight={isActive || item.isApp ? '700' : '500'}
                             color={
-                              item.isApp
-                                ? brand
-                                : isActive
-                                ? activeText
-                                : inactiveText
+                              item.isApp ? brand : isActive ? activeText : inactiveText
                             }
                           >
                             {item.label}
