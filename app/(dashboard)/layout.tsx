@@ -19,8 +19,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     if (initialKey?.includes('sk-') && apiKey !== initialKey) setApiKey(initialKey);
   }, [apiKey]);
 
-  const hideFooter = pathname?.startsWith('/chat');
-
   return (
     <Box>
       <Sidebar setApiKey={setApiKey} routes={routes} />
@@ -28,41 +26,36 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Box
         pt={{ base: '60px', md: '100px' }}
         float="right"
-        minH="100dvh"
-        h="100dvh"
-        overflow="hidden" // ✅ хамгийн чухал: outer scroll унтраана
+        minHeight="100vh"
+        height="100%"
+        overflow="auto"
         position="relative"
+        maxHeight="100%"
         w={{ base: '100%', xl: 'calc(100% - 290px)' }}
-        maxW={{ base: '100%', xl: 'calc(100% - 290px)' }}
+        maxWidth={{ base: '100%', xl: 'calc(100% - 290px)' }}
+        transition="all 0.33s cubic-bezier(0.685, 0.0473, 0.346, 1)"
+        transitionDuration=".2s, .2s, .35s"
+        transitionProperty="top, bottom, width"
+        transitionTimingFunction="linear, linear, ease"
       >
         <Portal>
           <Box>
             <Navbar
               setApiKey={setApiKey}
               onOpen={onOpen}
-              logoText={'oyunsanaa'}
+              logoText={'Horizon UI Dashboard PRO'}
               brandText={getActiveRoute(routes, pathname)}
               secondary={getActiveNavbar(routes, pathname)}
             />
           </Box>
         </Portal>
 
-        {/* ✅ ганц scroll энд */}
-        <Box
-          mx="auto"
-          p={{ base: '20px', md: '30px' }}
-          pe="20px"
-          pt="50px"
-          h="calc(100dvh - 80px)"
-          overflowY="auto"
-        >
+        <Box mx="auto" p={{ base: '20px', md: '30px' }} pe="20px" minH="100vh" pt="50px">
           {children}
+        </Box>
 
-          {!hideFooter && (
-            <Box>
-              <Footer />
-            </Box>
-          )}
+        <Box>
+          <Footer />
         </Box>
       </Box>
     </Box>
