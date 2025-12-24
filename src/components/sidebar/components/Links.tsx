@@ -1,7 +1,5 @@
 'use client';
-/* eslint-disable */
 
-// chakra imports
 import {
   Accordion,
   AccordionButton,
@@ -12,360 +10,118 @@ import {
   Box,
   Flex,
   HStack,
-  Text,
-  List,
   Icon,
+  List,
   ListItem,
+  Text,
   useColorModeValue,
-  Link,
 } from '@chakra-ui/react';
-import { FaCircle } from 'react-icons/fa';
-import { IoMdAdd } from 'react-icons/io';
-import NavLink from '@/components/link/NavLink';
-import { IRoute } from '@/types/navigation';
-import { PropsWithChildren, useCallback } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { MENU_CONFIG } from '@/config/menu.config';
 
-interface SidebarLinksProps extends PropsWithChildren {
-  routes: IRoute[];
-}
-
-export function SidebarLinks(props: SidebarLinksProps) {
-  //   Chakra color mode
+export default function LinksMenu() {
   const pathname = usePathname();
-  let activeColor = useColorModeValue('navy.700', 'white');
-  let inactiveColor = useColorModeValue('gray.500', 'gray.500');
-  let borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
-  let activeIcon = useColorModeValue('brand.500', 'white');
-  let iconColor = useColorModeValue('navy.700', 'white');
-  let gray = useColorModeValue('gray.500', 'gray.500');
 
-  const { routes } = props;
+  const activeText = useColorModeValue('navy.700', 'white');
+  const inactiveText = useColorModeValue('gray.600', 'gray.400');
+  const groupIcon = useColorModeValue('gray.700', 'gray.200');
+  const divider = useColorModeValue('gray.200', 'whiteAlpha.200');
 
-  // verifies if routeName is the one active (in browser input)
-  const activeRoute = useCallback(
-    (routeName: string) => {
-      return pathname?.includes(routeName);
-    },
-    [pathname],
-  );
+  // ✅ brand өнгө
+  const brand = '#1F6FB2';
 
-  // this function creates the links and collapses that appear in the sidebar (left menu)
-  const createLinks = (routes: IRoute[]) => {
-    return routes.map((route, key) => {
-      if (route.collapse && !route.invisible) {
+  return (
+    <Accordion allowMultiple defaultIndex={[0]}>
+      {MENU_CONFIG.map((group) => {
+        const GroupIcon = group.icon;
+
         return (
-          <Accordion defaultIndex={0} allowToggle key={key}>
-            <Flex w="100%" justifyContent={'space-between'}>
-              <AccordionItem isDisabled border="none" mb="14px" key={key}>
-                <AccordionButton
-                  display="flex"
-                  alignItems="center"
-                  mb="4px"
-                  justifyContent="center"
-                  _hover={{
-                    bg: 'unset',
-                  }}
-                  _focus={{
-                    boxShadow: 'none',
-                  }}
-                  borderRadius="8px"
-                  w="100%"
-                  py="0px"
-                  ms={0}
-                >
-                  {route.icon ? (
-                    <Flex
-                      align="center"
-                      justifyContent="space-between"
-                      w="100%"
-                    >
-                      <HStack
-                        spacing={
-                          activeRoute(route.path.toLowerCase())
-                            ? '22px'
-                            : '26px'
-                        }
-                      >
-                        <Flex
-                          w="100%"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <Box
-                            color={
-                              route.disabled
-                                ? gray
-                                : activeRoute(route.path.toLowerCase())
-                                ? activeIcon
-                                : inactiveColor
-                            }
-                            me="12px"
-                            mt="6px"
-                          >
-                            {route.icon}
-                          </Box>
-                          <Text
-                            cursor="not-allowed"
-                            me="auto"
-                            color={
-                              route.disabled
-                                ? gray
-                                : activeRoute(route.path.toLowerCase())
-                                ? activeColor
-                                : 'gray.500'
-                            }
-                            fontWeight="500"
-                            letterSpacing="0px"
-                            fontSize="sm"
-                          >
-                            {route.name}
-                          </Text>
-                        </Flex>
-                      </HStack>
-                    </Flex>
-                  ) : (
-                    <Flex pt="0px" pb="10px" alignItems="center" w="100%">
-                      <HStack
-                        spacing={
-                          activeRoute(route.path.toLowerCase())
-                            ? '22px'
-                            : '26px'
-                        }
-                        ps="32px"
-                      >
-                        <Text
-                          cursor="not-allowed"
-                          me="auto"
-                          fontWeight="500"
-                          letterSpacing="0px"
-                          fontSize="sm"
-                        >
-                          {route.name}
-                        </Text>
-                      </HStack>
-                      <AccordionIcon
-                        ms="auto"
-                        color={route.disabled ? gray : 'gray.500'}
-                      />
-                    </Flex>
-                  )}
-                </AccordionButton>
-                <AccordionPanel py="0px" ps={'8px'}>
-                  <List>
-                    {
-                      route.icon && route.items
-                        ? createLinks(route.items) // for bullet accordion links
-                        : route.items
-                        ? createAccordionLinks(route.items)
-                        : '' // for non-bullet accordion links
-                    }
-                  </List>
-                </AccordionPanel>
-              </AccordionItem>
-              <Link
-                isExternal
-                href="https://horizon-ui.com/ai-template"
-                mt="6px"
-              >
-                <Badge
-                  display={{ base: 'flex', lg: 'none', xl: 'flex' }}
-                  colorScheme="brand"
-                  borderRadius="25px"
-                  color="brand.500"
-                  textTransform={'none'}
-                  letterSpacing="0px"
-                  px="8px"
-                >
-                  PRO
-                </Badge>
-              </Link>
-            </Flex>
-          </Accordion>
-        );
-      } else if (!route.invisible) {
-        return (
-          <div key={key}>
-            {route.icon ? (
-              <Flex
-                align="center"
-                justifyContent="space-between"
-                w="100%"
-                maxW="100%"
-                ps="17px"
-                mb="0px"
-              >
-                <HStack
-                  w="100%"
-                  mb="14px"
-                  spacing={
-                    activeRoute(route.path.toLowerCase()) ? '22px' : '26px'
-                  }
-                >
-                  {route.name === 'Chat UI' ? (
-                    <NavLink
-                      href={
-                        route.layout ? route.layout + route.path : route.path
-                      }
-                      key={key}
-                      styles={{ width: '100%' }}
-                    >
-                      <Flex
-                        w="100%"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <Box
-                          color={
-                            route.disabled
-                              ? gray
-                              : activeRoute(route.path.toLowerCase())
-                              ? activeIcon
-                              : inactiveColor
-                          }
-                          me="12px"
-                          mt="6px"
-                        >
-                          {route.icon}
-                        </Box>
-                        <Text
-                          me="auto"
-                          color={
-                            route.disabled
-                              ? gray
-                              : activeRoute(route.path.toLowerCase())
-                              ? activeColor
-                              : 'gray.500'
-                          }
-                          fontWeight="500"
-                          letterSpacing="0px"
-                          fontSize="sm"
-                        >
-                          {route.name}
-                        </Text>
-                      </Flex>
-                    </NavLink>
-                  ) : (
-                    <Flex
-                      w="100%"
-                      alignItems="center"
-                      justifyContent="center"
-                      cursor="not-allowed"
-                    >
-                      <Box
-                        opacity="0.4"
-                        color={
-                          route.disabled
-                            ? gray
-                            : activeRoute(route.path.toLowerCase())
-                            ? activeIcon
-                            : inactiveColor
-                        }
-                        me="12px"
-                        mt="6px"
-                      >
-                        {route.icon}
-                      </Box>
-                      <Text
-                        opacity="0.4"
-                        me="auto"
-                        color={
-                          route.disabled
-                            ? gray
-                            : activeRoute(route.path.toLowerCase())
-                            ? activeColor
-                            : 'gray.500'
-                        }
-                        fontWeight="500"
-                        letterSpacing="0px"
-                        fontSize="sm"
-                      >
-                        {route.name}
-                      </Text>
-                      <Link
-                        isExternal
-                        href="https://horizon-ui.com/ai-template"
-                      >
-                        <Badge
-                          display={{ base: 'flex', lg: 'none', xl: 'flex' }}
-                          colorScheme="brand"
-                          borderRadius="25px"
-                          color="brand.500"
-                          textTransform={'none'}
-                          letterSpacing="0px"
-                          px="8px"
-                        >
-                          PRO
-                        </Badge>
-                      </Link>
-                    </Flex>
-                  )}
-                </HStack>
-              </Flex>
-            ) : (
-              <ListItem ms={0} cursor="not-allowed" opacity={'0.4'}>
-                <Flex ps="32px" alignItems="center" mb="8px">
-                  <Text
-                    color={
-                      route.disabled
-                        ? gray
-                        : activeRoute(route.path.toLowerCase())
-                        ? activeColor
-                        : inactiveColor
-                    }
-                    fontWeight="500"
-                    fontSize="xs"
-                  >
-                    {route.name}
+          <AccordionItem key={group.id} border="none" pb="8px">
+            <AccordionButton
+              px="12px"
+              py="10px"
+              borderRadius="12px"
+              _hover={{ bg: useColorModeValue('gray.50', 'whiteAlpha.100') }}
+              _focus={{ boxShadow: 'none' }}
+            >
+              <Flex w="100%" align="center" justify="space-between">
+                <HStack spacing="10px">
+                  <Box color={groupIcon}>
+                    <Icon as={GroupIcon} w="18px" h="18px" />
+                  </Box>
+                  <Text fontWeight="700" fontSize="sm" color={activeText}>
+                    {group.label}
                   </Text>
-                </Flex>
-              </ListItem>
-            )}
-          </div>
-        );
-      }
-    });
-  };
-  // this function creates the links from the secondary accordions (for example auth -> sign-in -> default)
-  const createAccordionLinks = (routes: IRoute[]) => {
-    return routes.map((route: IRoute, key: number) => {
-      return (
-        <ListItem
-          ms="28px"
-          display="flex"
-          alignItems="center"
-          mb="10px"
-          key={key}
-          cursor="not-allowed"
-        >
-          <Icon
-            w="6px"
-            h="6px"
-            me="8px"
-            as={FaCircle}
-            color={route.disabled ? gray : activeIcon}
-          />
-          <Text
-            color={
-              route.disabled
-                ? gray
-                : activeRoute(route.path.toLowerCase())
-                ? activeColor
-                : inactiveColor
-            }
-            fontWeight={
-              activeRoute(route.path.toLowerCase()) ? 'bold' : 'normal'
-            }
-            fontSize="sm"
-          >
-            {route.name}
-          </Text>
-        </ListItem>
-      );
-    });
-  };
-  //  BRAND
-  return <>{createLinks(routes)}</>;
-}
+                </HStack>
+                <AccordionIcon />
+              </Flex>
+            </AccordionButton>
 
-export default SidebarLinks;
+            <AccordionPanel px="0px" pt="8px" pb="6px">
+              <List
+                spacing="6px"
+                borderLeft="1px solid"
+                borderColor={divider}
+                ms="18px"
+                ps="12px"
+              >
+                {group.items.map((item) => {
+                  const isActive =
+                    pathname === item.href || pathname?.startsWith(item.href + '/');
+
+                  return (
+                    <ListItem key={item.id}>
+                      <Box
+                        as={Link}
+                        href={item.href}
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        px="10px"
+                        py="8px"
+                        borderRadius="10px"
+                        textDecoration="none"
+                        _hover={{
+                          textDecoration: 'none',
+                          bg: useColorModeValue('gray.50', 'whiteAlpha.100'),
+                        }}
+                        bg={
+                          isActive
+                            ? useColorModeValue('gray.100', 'whiteAlpha.200')
+                            : 'transparent'
+                        }
+                      >
+                        <Text
+                          fontSize="sm"
+                          fontWeight={isActive || item.isApp ? '700' : '500'}
+                          color={item.isApp ? brand : isActive ? activeText : inactiveText}
+                        >
+                          {item.label}
+                        </Text>
+
+                        {item.isApp ? (
+                          <Badge
+                            borderRadius="999px"
+                            px="8px"
+                            py="2px"
+                            fontSize="10px"
+                            bg={brand}
+                            color="white"
+                            textTransform="none"
+                          >
+                            APP
+                          </Badge>
+                        ) : null}
+                      </Box>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </AccordionPanel>
+          </AccordionItem>
+        );
+      })}
+    </Accordion>
+  );
+}
