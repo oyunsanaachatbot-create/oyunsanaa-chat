@@ -1,7 +1,6 @@
 'use client';
-
 import React, { ReactNode, useEffect, useState } from 'react';
-import { ChakraProvider, Box, Portal, useDisclosure, ColorModeScript } from '@chakra-ui/react';
+import { ChakraProvider, Box, Portal, Flex, useDisclosure, ColorModeScript } from '@chakra-ui/react';
 import theme from '@/theme/theme';
 import routes from '@/routes';
 import Sidebar from '@/components/sidebar/Sidebar';
@@ -22,9 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initialKey = localStorage.getItem('apiKey');
-    if (initialKey?.includes('sk-') && apiKey !== initialKey) {
-      setApiKey(initialKey);
-    }
+    if (initialKey?.includes('sk-') && apiKey !== initialKey) setApiKey(initialKey);
   }, [apiKey]);
 
   const isAuthPage = pathname?.includes('register') || pathname?.includes('sign-in');
@@ -32,31 +29,22 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body id="root">
-        {/* ✅ хамгийн чухал: Chakra theme-г буцааж асаана */}
         <ChakraProvider theme={theme}>
-          {/* ✅ Color mode-ийг зөв эхлүүлэх */}
           <ColorModeScript initialColorMode={(theme as any).config?.initialColorMode} />
           <AppWrappers>
             {isAuthPage ? (
               children
             ) : (
-              <Box>
-                <Sidebar setApiKey={setApiKey} routes={routes} />
-                <Box
-                  pt={{ base: '60px', md: '100px' }}
-                  float="right"
-                  minHeight="100vh"
-                  height="100%"
-                  overflow="auto"
-                  position="relative"
-                  maxHeight="100%"
-                  w={{ base: '100%', xl: 'calc( 100% - 290px )' }}
-                  maxWidth={{ base: '100%', xl: 'calc( 100% - 290px )' }}
-                  transition="all 0.33s cubic-bezier(0.685, 0.0473, 0.346, 1)"
-                  transitionDuration=".2s, .2s, .35s"
-                  transitionProperty="top, bottom, width"
-                  transitionTimingFunction="linear, linear, ease"
-                >
+              // ✅ Root container: нэг л дэлгэц, body scroll үгүй
+              <Flex w="100%" h="100vh" overflow="hidden">
+                {/* Sidebar */}
+                <Box w={{ base: '0px', xl: '290px' }} flexShrink={0}>
+                  <Sidebar setApiKey={setApiKey} routes={routes} />
+                </Box>
+
+                {/* Right area */}
+                <Flex direction="column" flex="1" minW={0} position="relative">
+                  {/* Navbar */}
                   <Portal>
                     <Box>
                       <Navbar
@@ -69,21 +57,22 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                     </Box>
                   </Portal>
 
+                  {/* ✅ Only this scrolls */}
                   <Box
-                    mx="auto"
-                    p={{ base: '20px', md: '30px' }}
-                    pe="20px"
-                    minH="100vh"
-                    pt="50px"
+                    pt={{ base: '60px', md: '100px' }}
+                    flex="1"
+                    minH={0}
+                    overflowY="auto"
+                    overflowX="hidden"
+                    sx={{ WebkitOverflowScrolling: 'touch' }}
                   >
-                    {children}
-                  </Box>
-
-                  <Box>
+                    <Box mx="auto" p={{ base: '20px', md: '30px' }} pe="20px" pt="50px">
+                      {children}
+                    </Box>
                     <Footer />
                   </Box>
-                </Box>
-              </Box>
+                </Flex>
+              </Flex>
             )}
           </AppWrappers>
         </ChakraProvider>
