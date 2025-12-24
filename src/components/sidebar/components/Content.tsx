@@ -21,8 +21,7 @@ import avatar4 from '/public/img/avatars/avatar4.png';
 import { NextAvatar } from '@/components/image/Avatar';
 import APIModal from '@/components/apiModal';
 import Brand from '@/components/sidebar/components/Brand';
-import { Links } from '@/components/sidebar/components/Links';
-import { IRoute } from '@/types/navigation';
+import Links from '@/components/sidebar/components/Links'; // ✅ DEFAULT import
 import { RoundedChart } from '@/components/icons/Icons';
 import { PropsWithChildren } from 'react';
 import { IoMdPerson } from 'react-icons/io';
@@ -31,13 +30,12 @@ import { LuHistory } from 'react-icons/lu';
 import { MdOutlineManageAccounts, MdOutlineSettings } from 'react-icons/md';
 
 interface SidebarContentProps extends PropsWithChildren {
-  routes: IRoute[];
   setApiKey?: (key: string) => void;
   [x: string]: any;
 }
 
 function SidebarContent(props: SidebarContentProps) {
-const { routes, setApiKey } = props;
+  const { setApiKey } = props;
 
   const textColor = useColorModeValue('navy.700', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
@@ -67,7 +65,7 @@ const { routes, setApiKey } = props;
 
       <Stack direction="column" mb="auto" mt="8px">
         <Box ps="0px" pe={{ md: '0px', '2xl': '0px' }}>
-         <Links routes={routes} />
+          <Links /> {/* ✅ routes дамжуулахгүй */}
         </Box>
       </Stack>
 
@@ -107,7 +105,12 @@ const { routes, setApiKey } = props;
             color={iconColor}
           >
             <Flex align="center" justifyContent="center">
-              <Icon as={MdOutlineSettings} width="18px" height="18px" color="inherit" />
+              <Icon
+                as={MdOutlineSettings}
+                width="18px"
+                height="18px"
+                color="inherit"
+              />
             </Flex>
           </MenuButton>
 
@@ -133,10 +136,19 @@ const { routes, setApiKey } = props;
                   me="12px"
                   opacity={'0.4'}
                 />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity={'0.4'}>
+                <Text
+                  color={gray}
+                  fontWeight="500"
+                  fontSize="sm"
+                  opacity={'0.4'}
+                >
                   Profile Settings
                 </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
                   <Badge
                     display={{ base: 'flex', lg: 'none', xl: 'flex' }}
                     colorScheme="brand"
@@ -154,11 +166,22 @@ const { routes, setApiKey } = props;
 
             <Box mb="30px">
               <Flex cursor={'not-allowed'} align="center">
-                <Icon as={LuHistory} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
+                <Icon
+                  as={LuHistory}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
                 <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
                   History
                 </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
                   <Badge
                     display={{ base: 'flex', lg: 'none', xl: 'flex' }}
                     colorScheme="brand"
@@ -187,7 +210,11 @@ const { routes, setApiKey } = props;
                 <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
                   Usage
                 </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
                   <Badge
                     display={{ base: 'flex', lg: 'none', xl: 'flex' }}
                     colorScheme="brand"
@@ -205,11 +232,22 @@ const { routes, setApiKey } = props;
 
             <Box>
               <Flex cursor={'not-allowed'} align="center">
-                <Icon as={IoMdPerson} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
+                <Icon
+                  as={IoMdPerson}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
                 <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
                   My Plan
                 </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
                   <Badge
                     display={{ base: 'flex', lg: 'none', xl: 'flex' }}
                     colorScheme="brand"
