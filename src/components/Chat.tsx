@@ -152,20 +152,28 @@ export default function Chat() {
     try {
       let res: Response;
 
-      if (hasImage) {
-        const fd = new FormData();
-        fd.append('model', model);
-        fd.append('inputCode', trimmed || '');
-        fd.append('image', imageFile as File);
-        res = await fetch('/api/chatAPI', { method: 'POST', body: fd });
-      } else {
-        res = await fetch('/api/chatAPI', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inputCode: trimmed, model }),
-        });
-      }
+if (hasImage) {
+  // 1) FormData-г эхлээд бэлдэнэ
+  const fd = new FormData();
+  fd.append('model', model);
+  fd.append('inputCode', trimmed || '');
+  fd.append('image', imageFile as File);
 
+  // ✅ 2) SEND дарсан мөчид preview-г шууд арилгана
+  clearImage();
+
+  // 3) Тэгээд API руу явуулна
+  res = await fetch('/api/chatAPI', {
+    method: 'POST',
+    body: fd,
+  });
+} else {
+  res = await fetch('/api/chatAPI', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inputCode: trimmed, model }),
+  });
+}
       // clear attachment UI once sent
       if (hasImage) clearImage();
 
