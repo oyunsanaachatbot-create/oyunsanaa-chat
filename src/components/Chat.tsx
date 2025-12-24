@@ -1,5 +1,5 @@
 'use client';
-/*eslint-disable*/
+/* eslint-disable */
 
 import { OpenAIModel } from '@/types/types';
 import {
@@ -19,12 +19,22 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MdAutoAwesome, MdBolt, MdContentCopy, MdEdit, MdPerson } from 'react-icons/md';
+import {
+  MdAutoAwesome,
+  MdBolt,
+  MdContentCopy,
+  MdEdit,
+  MdPerson,
+} from 'react-icons/md';
 
 const Bg = '/img/chat/bg-image.png';
 const BRAND = '#1F6FB2';
 
-type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string };
+type ChatMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+};
 
 export default function Chat() {
   const [model, setModel] = useState<OpenAIModel>('gpt-4o');
@@ -36,6 +46,7 @@ export default function Chat() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  // theme colors
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const inputColor = useColorModeValue('navy.700', 'white');
   const iconColor = useColorModeValue('brand.500', 'white');
@@ -45,18 +56,27 @@ export default function Chat() {
   );
   const buttonBg = useColorModeValue('white', 'whiteAlpha.100');
   const gray = useColorModeValue('gray.500', 'whiteAlpha.700');
-  const buttonShadow = useColorModeValue('14px 27px 45px rgba(112, 144, 176, 0.2)', 'none');
+  const buttonShadow = useColorModeValue(
+    '14px 27px 45px rgba(112, 144, 176, 0.2)',
+    'none',
+  );
   const textColor = useColorModeValue('navy.700', 'white');
-  const placeholderColor = useColorModeValue({ color: 'gray.500' }, { color: 'whiteAlpha.600' });
+  const placeholderColor = useColorModeValue(
+    { color: 'gray.500' },
+    { color: 'whiteAlpha.600' },
+  );
   const assistantBg = useColorModeValue('gray.50', 'whiteAlpha.100');
   const userBg = useColorModeValue('white', 'whiteAlpha.100');
+  const composerBg = useColorModeValue('white', 'navy.900');
 
+  // auto-scroll
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages.length, loading]);
 
+  // keep focus
   useEffect(() => {
     inputRef.current?.focus();
   }, [messages.length, loading]);
@@ -64,20 +84,41 @@ export default function Chat() {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-    } catch {
-      const el = document.createElement('textarea');
-      el.value = text;
-      document.body.appendChild(el);
-      el.select();
+      return;
+    } catch {}
+
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '0';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
       document.execCommand('copy');
-      document.body.removeChild(el);
+      document.body.removeChild(ta);
+    } catch {
+      alert('Copy хийх боломжгүй байна (browser permission).');
     }
   };
 
   const send = async () => {
     const trimmed = input.trim();
     if (!trimmed || loading) return;
-    if (trimmed.length > maxLen) return;
+
+    if (trimmed.length > maxLen) {
+      alert(`Хэт урт байна (${trimmed.length}/${maxLen}).`);
+      return;
+    }
+
+    const apiKey = localStorage.getItem('apiKey') || '';
+    if (!apiKey.includes('sk-')) {
+      alert('API key оруулна уу (localStorage дээр apiKey).');
+      return;
+    }
 
     const userId = crypto.randomUUID();
     const assistantId = crypto.randomUUID();
@@ -95,17 +136,32 @@ export default function Chat() {
       const res = await fetch('/api/chatAPI', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputCode: trimmed, model }),
+        // ✅ template route-тэй нийцтэй body
+        body: JSON.stringify({ inputCode: trimmed, model, apiKey }),
       });
 
       if (!res.ok) {
         const t = await res.text().catch(() => '');
         setMessages((p) =>
-          p.map((m) => (m.id === assistantId ? { ...m, content: `API error: ${t || res.status}` } : m)),
+          p.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: `API error: ${t || res.status}` }
+              : m,
+          ),
         );
         return;
       }
-      if (!res.body) return;
+
+      if (!res.body) {
+        setMessages((p) =>
+          p.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: 'Empty response body.' }
+              : m,
+          ),
+        );
+        return;
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -115,8 +171,18 @@ export default function Chat() {
         const { value, done } = await reader.read();
         if (done) break;
         acc += decoder.decode(value || new Uint8Array(), { stream: true });
-        setMessages((p) => p.map((m) => (m.id === assistantId ? { ...m, content: acc } : m)));
+        setMessages((p) =>
+          p.map((m) => (m.id === assistantId ? { ...m, content: acc } : m)),
+        );
       }
+    } catch {
+      setMessages((p) =>
+        p.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: 'Network error. Try again.' }
+            : m,
+        ),
+      );
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 0);
@@ -132,7 +198,7 @@ export default function Chat() {
         left="50%"
         top="45%"
         transform="translate(-50%, -50%)"
-        opacity={0.10}
+        opacity={0.08}
         pointerEvents="none"
       />
 
@@ -156,7 +222,15 @@ export default function Chat() {
             border="1px solid"
             borderColor={model === 'gpt-3.5-turbo' ? BRAND : borderColor}
           >
-            <Flex borderRadius="full" justify="center" align="center" bg={bgIcon} me="10px" h="34px" w="34px">
+            <Flex
+              borderRadius="full"
+              justify="center"
+              align="center"
+              bg={bgIcon}
+              me="10px"
+              h="34px"
+              w="34px"
+            >
               <Icon as={MdAutoAwesome} boxSize="18px" color={iconColor} />
             </Flex>
             GPT-3.5
@@ -179,7 +253,15 @@ export default function Chat() {
             border="1px solid"
             borderColor={model === 'gpt-4o' ? BRAND : borderColor}
           >
-            <Flex borderRadius="full" justify="center" align="center" bg={bgIcon} me="10px" h="34px" w="34px">
+            <Flex
+              borderRadius="full"
+              justify="center"
+              align="center"
+              bg={bgIcon}
+              me="10px"
+              h="34px"
+              w="34px"
+            >
               <Icon as={MdBolt} boxSize="18px" color={iconColor} />
             </Flex>
             GPT-4o
@@ -212,8 +294,23 @@ export default function Chat() {
       </Flex>
 
       {/* Messages */}
-      <Flex ref={scrollRef} direction="column" flex="1" minH="0" overflowY="auto" px={{ base: '10px', md: '0px' }}>
-        <Flex direction="column" mx="auto" w="100%" maxW="1000px" px={{ base: '10px', md: '0px' }} py="12px" gap="12px">
+      <Flex
+        ref={scrollRef}
+        direction="column"
+        flex="1"
+        minH="0"
+        overflowY="auto"
+        px={{ base: '10px', md: '0px' }}
+      >
+        <Flex
+          direction="column"
+          mx="auto"
+          w="100%"
+          maxW="1000px"
+          px={{ base: '10px', md: '0px' }}
+          py="12px"
+          gap="12px"
+        >
           {messages.length === 0 ? (
             <Flex direction="column" align="center" justify="center" mt="24px" opacity={0.95}>
               <Text color={textColor} fontWeight="800" fontSize="lg">
@@ -227,7 +324,7 @@ export default function Chat() {
             messages.map((m) => {
               const isUser = m.role === 'user';
               return (
-                <Flex key={m.id} w="100%" align="flex-start" mb="2px">
+                <Flex key={m.id} w="100%" align="flex-start">
                   <Flex
                     borderRadius="full"
                     justify="center"
@@ -240,7 +337,11 @@ export default function Chat() {
                     minW="36px"
                     mt="2px"
                   >
-                    <Icon as={isUser ? MdPerson : MdAutoAwesome} boxSize="18px" color={isUser ? BRAND : 'white'} />
+                    <Icon
+                      as={isUser ? MdPerson : MdAutoAwesome}
+                      boxSize="18px"
+                      color={isUser ? BRAND : 'white'}
+                    />
                   </Flex>
 
                   <Flex
@@ -266,13 +367,13 @@ export default function Chat() {
                     <Flex mt="10px" gap="10px" justify="flex-end" opacity={0.9}>
                       {isUser && (
                         <Tooltip label="Edit" hasArrow>
-                          <Box cursor="pointer" onClick={() => setInput(m.content)}>
+                          <Box role="button" cursor="pointer" onClick={() => setInput(m.content)}>
                             <Icon as={MdEdit} boxSize="18px" color={gray} />
                           </Box>
                         </Tooltip>
                       )}
                       <Tooltip label="Copy" hasArrow>
-                        <Box cursor="pointer" onClick={() => copyToClipboard(m.content)}>
+                        <Box role="button" cursor="pointer" onClick={() => copyToClipboard(m.content)}>
                           <Icon as={MdContentCopy} boxSize="18px" color={gray} />
                         </Box>
                       </Tooltip>
@@ -292,7 +393,7 @@ export default function Chat() {
         zIndex={3}
         borderTop="1px solid"
         borderColor={borderColor}
-        bg={useColorModeValue('white', 'navy.900')}
+        bg={composerBg}
         px={{ base: '10px', md: '10px' }}
         pt="12px"
         pb="calc(env(safe-area-inset-bottom) + 12px)"
