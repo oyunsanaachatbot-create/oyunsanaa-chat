@@ -93,7 +93,7 @@ export const routes: IRoute[] = [
     name: 'Тогтвортой амьдрал',
     path: '/mind/life',
     collapse: true,
-    icon: <Icon as={FaCoffee} w="18px" h="18px" />,
+   icon: <Icon as={FaMugHot} w="18px" h="18px" />,
     items: [
       { name: 'Миний стрессийн эх үүсвэр', path: '/mind/life/stress-source' },
       { name: 'Санхүүгийн сэтгэлзүй', path: '/mind/life/money-mindset' },
