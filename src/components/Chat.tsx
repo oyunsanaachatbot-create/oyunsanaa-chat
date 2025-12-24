@@ -153,21 +153,38 @@ export default function Chat() {
       let res: Response;
 
 if (hasImage) {
-  // 1) FormData-г эхлээд бэлдэнэ
+  // ✅ 0) Preview URL-г эхлээд хадгал (chat дотор харуулахын тулд)
+  const previewForMessage = imagePreview;
+
+  // 1) FormData бэлд
   const fd = new FormData();
   fd.append('model', model);
   fd.append('inputCode', trimmed || '');
   fd.append('image', imageFile as File);
 
-  // ✅ 2) SEND дарсан мөчид preview-г шууд арилгана
-  clearImage();
+  // ✅ 2) Messages-д user message оруулахдаа хадгалсан preview-г ашигла
+  const userId = crypto.randomUUID();
+  const assistantId = crypto.randomUUID();
 
-  // 3) Тэгээд API руу явуулна
-  res = await fetch('/api/chatAPI', {
-    method: 'POST',
-    body: fd,
-  });
+  setMessages((p) => [
+    ...p,
+    { id: userId, role: 'user', content: trimmed || '', imageUrl: previewForMessage },
+    { id: assistantId, role: 'assistant', content: '' },
+  ]);
+
+  // ✅ 3) Одоо composer preview-г цэвэрлэ (URL revoke хийхгүй)
+  clearComposerImage();
+
+  setInput('');
+  setLoading(true);
+
+  // 4) API руу явуул
+  res = await fetch('/api/chatAPI', { method: 'POST', body: fd });
+
+  // ✅ Доорх stream update хэсэгт assistantId-г хэрэглэнэ
+  // (Чиний кодонд байсан stream хэсэг unchanged)
 } else {
+  // text-only хэсэг чинь хэвээр
   res = await fetch('/api/chatAPI', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
