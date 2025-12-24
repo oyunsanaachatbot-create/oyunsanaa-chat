@@ -13,9 +13,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { onOpen } = useDisclosure();
 
+  const hideFooter = pathname?.startsWith('/chat');
+
   return (
     <Box>
-      {/* ✅ setApiKey хэрэггүй болсон */}
+      {/* ✅ setApiKey бүү дамжуул (SideBar чинь ихэнхдээ хэрэглэхгүй, алдаа үүсгэдэг) */}
       <Sidebar routes={routes ?? []} />
 
       <Box
@@ -49,7 +51,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           overflowY="auto"
         >
           {children}
-          <Footer />
+
+          {!hideFooter && (
+            <Box>
+              <Footer />
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>
