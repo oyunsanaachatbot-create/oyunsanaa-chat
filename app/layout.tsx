@@ -1,6 +1,8 @@
 'use client';
+
 import React, { ReactNode, useEffect, useState } from 'react';
-import { Box, Portal, useDisclosure, Flex } from '@chakra-ui/react';
+import { ChakraProvider, Box, Portal, useDisclosure, ColorModeScript } from '@chakra-ui/react';
+import theme from '@/theme/theme';
 import routes from '@/routes';
 import Sidebar from '@/components/sidebar/Sidebar';
 import Footer from '@/components/footer/FooterAdmin';
@@ -16,7 +18,7 @@ import AppWrappers from './AppWrappers';
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [apiKey, setApiKey] = useState('');
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { onOpen } = useDisclosure();
 
   useEffect(() => {
     const initialKey = localStorage.getItem('apiKey');
@@ -25,72 +27,66 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     }
   }, [apiKey]);
 
-  const isAuthPage =
-    pathname?.includes('register') || pathname?.includes('sign-in');
+  const isAuthPage = pathname?.includes('register') || pathname?.includes('sign-in');
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body id="root">
-        <AppWrappers>
-          {isAuthPage ? (
-            children
-          ) : (
-            // ✅ хамгийн чухал: root container нь 100vh + overflow hidden
-            <Flex w="100%" h="100vh" overflow="hidden">
-              <Sidebar setApiKey={setApiKey} routes={routes} />
-
-              {/* ✅ Right content area: sidebar-тай мөргөлдөхгүй, дангаараа scroll */}
-              <Flex
-                direction="column"
-                w={{ base: '100%', xl: 'calc(100% - 290px)' }}
-                maxW={{ base: '100%', xl: 'calc(100% - 290px)' }}
-                ms={{ base: 0, xl: '290px' }} // ✅ float биш, margin-left
-                position="relative"
-                minH="0"
-              >
-                {/* Navbar Portal хэвээр */}
-                <Portal>
-                  <Box>
-                    <Navbar
-                      setApiKey={setApiKey}
-                      onOpen={onOpen}
-                      logoText={'Horizon UI Dashboard PRO'}
-                      brandText={getActiveRoute(routes, pathname)}
-                      secondary={getActiveNavbar(routes, pathname)}
-                    />
-                  </Box>
-                </Portal>
-
-                {/* ✅ Scroll container (Navbar-ийн зайг pt-ээр өгнө) */}
+        {/* ✅ хамгийн чухал: Chakra theme-г буцааж асаана */}
+        <ChakraProvider theme={theme}>
+          {/* ✅ Color mode-ийг зөв эхлүүлэх */}
+          <ColorModeScript initialColorMode={(theme as any).config?.initialColorMode} />
+          <AppWrappers>
+            {isAuthPage ? (
+              children
+            ) : (
+              <Box>
+                <Sidebar setApiKey={setApiKey} routes={routes} />
                 <Box
                   pt={{ base: '60px', md: '100px' }}
-                  flex="1"
-                  minH="0"
-                  overflowY="auto"
-                  overflowX="hidden"
-                  // iOS дээр scroll жигд болгоно
-                  sx={{ WebkitOverflowScrolling: 'touch' }}
+                  float="right"
+                  minHeight="100vh"
+                  height="100%"
+                  overflow="auto"
+                  position="relative"
+                  maxHeight="100%"
+                  w={{ base: '100%', xl: 'calc( 100% - 290px )' }}
+                  maxWidth={{ base: '100%', xl: 'calc( 100% - 290px )' }}
+                  transition="all 0.33s cubic-bezier(0.685, 0.0473, 0.346, 1)"
+                  transitionDuration=".2s, .2s, .35s"
+                  transitionProperty="top, bottom, width"
+                  transitionTimingFunction="linear, linear, ease"
                 >
-                  {/* Content */}
+                  <Portal>
+                    <Box>
+                      <Navbar
+                        setApiKey={setApiKey}
+                        onOpen={onOpen}
+                        logoText={'Horizon UI Dashboard PRO'}
+                        brandText={getActiveRoute(routes, pathname)}
+                        secondary={getActiveNavbar(routes, pathname)}
+                      />
+                    </Box>
+                  </Portal>
+
                   <Box
                     mx="auto"
                     p={{ base: '20px', md: '30px' }}
                     pe="20px"
+                    minH="100vh"
                     pt="50px"
-                    minH="0"
                   >
                     {children}
                   </Box>
 
-                  {/* Footer */}
                   <Box>
                     <Footer />
                   </Box>
                 </Box>
-              </Flex>
-            </Flex>
-          )}
-        </AppWrappers>
+              </Box>
+            )}
+          </AppWrappers>
+        </ChakraProvider>
       </body>
     </html>
   );
