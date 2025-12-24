@@ -1,117 +1,282 @@
 'use client';
-
+// chakra imports
 import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
   Badge,
   Box,
+  Button,
   Flex,
-  HStack,
   Icon,
-  List,
-  ListItem,
+  Link,
+  Menu,
+  MenuButton,
+  MenuList,
+  Stack,
   Text,
   useColorModeValue,
 } from '@chakra-ui/react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { MENU_CONFIG } from '@/config/menu.config';
+import NavLink from '@/components/link/NavLink';
+//   Custom components
+import avatar4 from '/public/img/avatars/avatar4.png';
+import { NextAvatar } from '@/components/image/Avatar';
+import APIModal from '@/components/apiModal';
+import Brand from '@/components/sidebar/components/Brand';
+import Links from '@/components/sidebar/components/Links';
+import SidebarCard from '@/components/sidebar/components/SidebarCard';
+import { RoundedChart } from '@/components/icons/Icons';
+import { PropsWithChildren } from 'react';
+import { IRoute } from '@/types/navigation';
+import { IoMdPerson } from 'react-icons/io';
+import { FiLogOut } from 'react-icons/fi';
+import { LuHistory } from 'react-icons/lu';
+import { MdOutlineManageAccounts, MdOutlineSettings } from 'react-icons/md';
 
-export default function LinksMenu() {
-  const pathname = usePathname();
+// FUNCTIONS
 
-  const activeText = useColorModeValue('navy.700', 'white');
-  const inactiveText = useColorModeValue('gray.600', 'gray.400');
-  const groupIcon = useColorModeValue('gray.700', 'gray.200');
-  const divider = useColorModeValue('gray.200', 'whiteAlpha.200');
+interface SidebarContent extends PropsWithChildren {
+  routes: IRoute[];
+  [x: string]: any;
+}
 
-  // ✅ brand өнгө (чи өгсөн)
-  const brand = '#1F6FB2';
-
-  // ✅ Desktop дээр олон нээлттэй байж болно. Mobile дээр дараа нь хүсвэл нэг болгож өгнө.
+function SidebarContent(props: SidebarContent) {
+  const { routes, setApiKey } = props;
+  const textColor = useColorModeValue('navy.700', 'white');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
+  const bgColor = useColorModeValue('white', 'navy.700');
+  const shadow = useColorModeValue(
+    '14px 17px 40px 4px rgba(112, 144, 176, 0.18)',
+    '14px 17px 40px 4px rgba(12, 44, 55, 0.18)',
+  );
+  const iconColor = useColorModeValue('navy.700', 'white');
+  const shadowPillBar = useColorModeValue(
+    '4px 17px 40px 4px rgba(112, 144, 176, 0.08)',
+    'none',
+  );
+  const gray = useColorModeValue('gray.500', 'white');
+  // SIDEBAR
   return (
-    <Accordion allowMultiple defaultIndex={[0]}>
-      {MENU_CONFIG.map((group) => {
-        const GroupIcon = group.icon;
+    <Flex
+      direction="column"
+      height="100%"
+      pt="20px"
+      pb="26px"
+      borderRadius="30px"
+      maxW="285px"
+      px="20px"
+    >
+      <Brand />
+      <Stack direction="column" mb="auto" mt="8px">
+        <Box ps="0px" pe={{ md: '0px', '2xl': '0px' }}>
+          <Links routes={routes} />
+        </Box>
+      </Stack>
 
-        return (
-          <AccordionItem key={group.id} border="none" pb="8px">
-            <AccordionButton
-              px="12px"
-              py="10px"
-              borderRadius="12px"
-              _hover={{ bg: useColorModeValue('gray.50', 'whiteAlpha.100') }}
-              _focus={{ boxShadow: 'none' }}
-            >
-              <Flex w="100%" align="center" justify="space-between">
-                <HStack spacing="10px">
-                  <Box color={groupIcon}>
-                    <Icon as={GroupIcon} w="18px" h="18px" />
-                  </Box>
-                  <Text fontWeight="700" fontSize="sm" color={activeText}>
-                    {group.label}
-                  </Text>
-                </HStack>
-                <AccordionIcon />
+      <Box mt="60px" width={'100%'} display={'flex'} justifyContent={'center'}>
+        <SidebarCard />
+      </Box>
+      <APIModal setApiKey={setApiKey} sidebar={true} />
+      <Flex
+        mt="8px"
+        justifyContent="center"
+        alignItems="center"
+        boxShadow={shadowPillBar}
+        borderRadius="30px"
+        p="14px"
+      >
+        <NextAvatar h="34px" w="34px" src={avatar4} me="10px" />
+        <Text color={textColor} fontSize="xs" fontWeight="600" me="10px">
+          Adela Parkson
+        </Text>
+        <Menu>
+          <MenuButton
+            as={Button}
+            variant="transparent"
+            aria-label=""
+            border="1px solid"
+            borderColor={borderColor}
+            borderRadius="full"
+            w="34px"
+            h="34px"
+            px="0px"
+            p="0px"
+            minW="34px"
+            me="10px"
+            justifyContent={'center'}
+            alignItems="center"
+            color={iconColor}
+          >
+            <Flex align="center" justifyContent="center">
+              <Icon
+                as={MdOutlineSettings}
+                width="18px"
+                height="18px"
+                color="inherit"
+              />
+            </Flex>
+          </MenuButton>
+          <MenuList
+            ms="-20px"
+            py="25px"
+            ps="20px"
+            pe="20px"
+            w="246px"
+            borderRadius="16px"
+            transform="translate(-19px, -62px)!important"
+            border="0px"
+            boxShadow={shadow}
+            bg={bgColor}
+          >
+            <Box mb="30px">
+              <Flex align="center" w="100%" cursor={'not-allowed'}>
+                <Icon
+                  as={MdOutlineManageAccounts}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  me="12px"
+                  opacity={'0.4'}
+                />
+                <Text
+                  color={gray}
+                  fontWeight="500"
+                  fontSize="sm"
+                  opacity={'0.4'}
+                >
+                  Profile Settings
+                </Text>
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
+                  <Badge
+                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
+                    colorScheme="brand"
+                    borderRadius="25px"
+                    color="brand.500"
+                    textTransform={'none'}
+                    letterSpacing="0px"
+                    px="8px"
+                  >
+                    PRO
+                  </Badge>
+                </Link>
               </Flex>
-            </AccordionButton>
-
-            <AccordionPanel px="0px" pt="8px" pb="6px">
-              <List spacing="6px" borderLeft="1px solid" borderColor={divider} ms="18px" ps="12px">
-                {group.items.map((item) => {
-                  const isActive =
-                    pathname === item.href || pathname?.startsWith(item.href + '/');
-
-                  const isApp = !!item.isApp;
-
-                  return (
-                    <ListItem key={item.id}>
-                      <Box
-                        as={Link}
-                        href={item.href}
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        px="10px"
-                        py="8px"
-                        borderRadius="10px"
-                        textDecoration="none"
-                        _hover={{ textDecoration: 'none', bg: useColorModeValue('gray.50', 'whiteAlpha.100') }}
-                        bg={isActive ? useColorModeValue('gray.100', 'whiteAlpha.200') : 'transparent'}
-                      >
-                        <Text
-                          fontSize="sm"
-                          fontWeight={isActive || isApp ? '700' : '500'}
-                          color={isApp ? brand : isActive ? activeText : inactiveText}
-                        >
-                          {item.label}
-                        </Text>
-
-                        {isApp ? (
-                          <Badge
-                            borderRadius="999px"
-                            px="8px"
-                            py="2px"
-                            fontSize="10px"
-                            bg={brand}
-                            color="white"
-                            textTransform="none"
-                          >
-                            APP
-                          </Badge>
-                        ) : null}
-                      </Box>
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </AccordionPanel>
-          </AccordionItem>
-        );
-      })}
-    </Accordion>
+            </Box>
+            <Box mb="30px">
+              <Flex cursor={'not-allowed'} align="center">
+                <Icon
+                  as={LuHistory}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
+                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                  History
+                </Text>
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
+                  <Badge
+                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
+                    colorScheme="brand"
+                    borderRadius="25px"
+                    color="brand.500"
+                    textTransform={'none'}
+                    letterSpacing="0px"
+                    px="8px"
+                  >
+                    PRO
+                  </Badge>
+                </Link>
+              </Flex>
+            </Box>
+            <Box mb="30px">
+              <Flex cursor={'not-allowed'} align="center">
+                <Icon
+                  as={RoundedChart}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
+                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                  Usage
+                </Text>
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
+                  <Badge
+                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
+                    colorScheme="brand"
+                    borderRadius="25px"
+                    color="brand.500"
+                    textTransform={'none'}
+                    letterSpacing="0px"
+                    px="8px"
+                  >
+                    PRO
+                  </Badge>
+                </Link>
+              </Flex>
+            </Box>
+            <Box>
+              <Flex cursor={'not-allowed'} align="center">
+                <Icon
+                  as={IoMdPerson}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
+                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                  My Plan
+                </Text>
+                <Link
+                  ms="auto"
+                  isExternal
+                  href="https://horizon-ui.com/ai-template"
+                >
+                  <Badge
+                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
+                    colorScheme="brand"
+                    borderRadius="25px"
+                    color="brand.500"
+                    textTransform={'none'}
+                    letterSpacing="0px"
+                    px="8px"
+                  >
+                    PRO
+                  </Badge>
+                </Link>
+              </Flex>
+            </Box>
+          </MenuList>
+        </Menu>
+        <Button
+          variant="transparent"
+          border="1px solid"
+          borderColor={borderColor}
+          borderRadius="full"
+          w="34px"
+          h="34px"
+          px="0px"
+          minW="34px"
+          justifyContent={'center'}
+          alignItems="center"
+        >
+          <Icon as={FiLogOut} width="16px" height="16px" color="inherit" />
+        </Button>
+      </Flex>
+    </Flex>
   );
 }
+
+export default SidebarContent;
