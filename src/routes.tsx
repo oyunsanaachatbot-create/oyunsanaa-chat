@@ -46,6 +46,7 @@ export const routes: IRoute[] = [
     name: 'Харилцах ухаан',
     path: '/mind/relations',
     collapse: true,
+    
     icon: <Icon as={FaHandshake} w="18px" h="18px" />,
     items: [
       { name: 'Харилцааны суурь чадвар', path: '/mind/relations/foundation' },
@@ -120,3 +121,4 @@ export const routes: IRoute[] = [
     ],
   },
 ];
+export default routes;
