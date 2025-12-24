@@ -46,6 +46,7 @@ export default function Chat() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const maxLen = useMemo(() => 2000, []);
 
+  // colors (тем/өнгө өөрчлөхгүй — зөвхөн component дотроо)
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const inputColor = useColorModeValue('navy.700', 'white');
   const iconColor = useColorModeValue('brand.500', 'white');
@@ -54,7 +55,7 @@ export default function Chat() {
     'whiteAlpha.200',
   );
   const buttonBg = useColorModeValue('white', 'whiteAlpha.100');
-  const gray = useColorModeValue('gray.500', 'white');
+  const gray = useColorModeValue('gray.500', 'whiteAlpha.700');
   const buttonShadow = useColorModeValue(
     '14px 27px 45px rgba(112, 144, 176, 0.2)',
     'none',
@@ -67,8 +68,9 @@ export default function Chat() {
   const assistantBg = useColorModeValue('gray.50', 'whiteAlpha.100');
   const userBg = useColorModeValue('white', 'whiteAlpha.100');
 
+  // scroll to bottom when new message arrives
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages.length, loading]);
 
   const copyToClipboard = async (text: string) => {
@@ -110,6 +112,8 @@ export default function Chat() {
     setLoading(true);
 
     try {
+      // ✅ route чинь одоо юу байгаагаас үл хамаараад эндээ тааруул.
+      // Чи өмнө нь /api/chatAPI гэж явуулж байсан тул тэрийг үлдээлээ.
       const res = await fetch('/api/chatAPI', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,9 +141,12 @@ export default function Chat() {
         return;
       }
 
+      // ✅ stream reading + de-dup хамгаалалт (HelloHello... давталт тасална)
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
+
       let acc = '';
+      let lastLen = 0;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -147,10 +154,16 @@ export default function Chat() {
 
         const chunk = decoder.decode(value || new Uint8Array(), { stream: true });
 
-        // ✅ хамгаалалт: хаах маркер таарвал тасал
-        if (chunk.includes('[DONE]')) break;
+        // Зарим серверүүд "нийт текст" буцаадаг, зарим нь "delta" буцаадаг.
+        // Давхардлыг таслах:
+        if (chunk && chunk.startsWith(acc)) {
+          acc = chunk;
+        } else {
+          acc += chunk;
+        }
 
-        acc += chunk;
+        if (acc.length === lastLen) continue;
+        lastLen = acc.length;
 
         setMessages((prev) =>
           prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m)),
@@ -159,7 +172,9 @@ export default function Chat() {
     } catch {
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === assistantId ? { ...m, content: 'Network error. Try again.' } : m,
+          m.id === assistantId
+            ? { ...m, content: 'Network error. Try again.' }
+            : m,
         ),
       );
     } finally {
@@ -176,42 +191,37 @@ export default function Chat() {
         left="50%"
         top="45%"
         transform="translate(-50%, -50%)"
-        opacity={0.12}
+        opacity={0.10}
         pointerEvents="none"
       />
 
-      {/* ✅ Template доторх content area-д тааруулсан wrapper */}
+      {/* ✅ content wrapper: footer-оос үл хамааран chat өөрөө зөв scroll хийнэ */}
       <Flex
         direction="column"
         mx="auto"
         w="100%"
         maxW="1000px"
-        flex="1"
-        minH="0"
-        height="100%"
+        minH="calc(100vh - 180px)" // footer гардаг layout дээр height-тэй байлгаж өгнө
         position="relative"
         px={{ base: '10px', md: '0px' }}
+        pb="110px" // fixed input bar-ын зай
       >
-        {/* ✅ 2 товч header-ийн цаагуур орохгүй байлгахын тулд top зай */}
-        <Box h={{ base: '10px', md: '0px' }} />
-
-        {/* Model / Plugins (2 button харагдана) */}
-        <Flex direction="column" w="100%" mb="10px" flexShrink={0}>
+        {/* Top controls (zIndex өндөр = header-ийн ард орохгүй) */}
+        <Flex direction="column" w="100%" mb="10px" flexShrink={0} zIndex={5}>
           <Flex
             mx="auto"
-            zIndex="2"
             w="max-content"
-            mb="16px"
+            mb="12px"
             borderRadius="60px"
-            mt={{ base: '6px', md: '0px' }}
+            gap="10px"
           >
             <Flex
               cursor="pointer"
-              transition="0.3s"
+              transition="0.2s"
               justify="center"
               align="center"
               bg={model === 'gpt-3.5-turbo' ? buttonBg : 'transparent'}
-              w="174px"
+              w={{ base: '150px', md: '174px' }}
               h="56px"
               boxShadow={model === 'gpt-3.5-turbo' ? buttonShadow : 'none'}
               borderRadius="14px"
@@ -220,7 +230,7 @@ export default function Chat() {
               fontWeight="700"
               onClick={() => setModel('gpt-3.5-turbo')}
               border="1px solid"
-              borderColor={model === 'gpt-3.5-turbo' ? BRAND : 'transparent'}
+              borderColor={model === 'gpt-3.5-turbo' ? BRAND : borderColor}
             >
               <Flex
                 borderRadius="full"
@@ -238,11 +248,11 @@ export default function Chat() {
 
             <Flex
               cursor="pointer"
-              transition="0.3s"
+              transition="0.2s"
               justify="center"
               align="center"
               bg={model === 'gpt-4o' ? buttonBg : 'transparent'}
-              w="164px"
+              w={{ base: '150px', md: '164px' }}
               h="56px"
               boxShadow={model === 'gpt-4o' ? buttonShadow : 'none'}
               borderRadius="14px"
@@ -251,7 +261,7 @@ export default function Chat() {
               fontWeight="700"
               onClick={() => setModel('gpt-4o')}
               border="1px solid"
-              borderColor={model === 'gpt-4o' ? BRAND : 'transparent'}
+              borderColor={model === 'gpt-4o' ? BRAND : borderColor}
             >
               <Flex
                 borderRadius="full"
@@ -285,15 +295,21 @@ export default function Chat() {
                 <AccordionIcon color={gray} />
               </AccordionButton>
               <AccordionPanel mx="auto" w="max-content" p="0px 0px 10px 0px">
-                <Text color={gray} fontWeight="500" fontSize="sm" textAlign="center">
-                  This is a cool text example.
+                <Text
+                  color={gray}
+                  fontWeight="500"
+                  fontSize="sm"
+                  textAlign="center"
+                >
+                  {/* Энийг хүсвэл өөрчил */}
+                  .
                 </Text>
               </AccordionPanel>
             </AccordionItem>
           </Accordion>
         </Flex>
 
-        {/* ✅ Messages = зөвхөн энэ хэсэг л scroll болох ёстой */}
+        {/* ✅ Messages scroll area: зөвхөн энд л scroll */}
         <Flex
           direction="column"
           w="100%"
@@ -301,16 +317,27 @@ export default function Chat() {
           minH="0"
           overflowY="auto"
           px={{ base: '4px', md: '10px' }}
-          // ✅ footer + input давхцахаас хамгаалсан padding (их байхаас айх хэрэггүй)
-          pb={{ base: '220px', md: '200px' }}
+          pb="140px"
         >
           {messages.length === 0 ? (
-            <Flex direction="column" align="center" justify="center" mt="30px" opacity={0.95}>
-              <Text color={textColor} fontWeight="800" fontSize="lg" textAlign="center">
-                Сайн уу? 👋
+            <Flex
+              direction="column"
+              align="center"
+              justify="center"
+              mt="24px"
+              opacity={0.95}
+            >
+              <Text color={textColor} fontWeight="800" fontSize="lg">
+                Сайн уу? 🙂
               </Text>
-              <Text color={gray} fontSize="sm" textAlign="center" mt="6px" maxW="520px">
-                Сэтгэлийн туслагч Oyunsanaa байна. Танд юугаар туслах уу?
+              <Text
+                color={gray}
+                fontSize="sm"
+                textAlign="center"
+                mt="6px"
+                maxW="520px"
+              >
+                Сэтгэлийн туслагч Oyunsanaa байна. Танид юугаар туслах уу?
               </Text>
             </Flex>
           ) : (
@@ -330,7 +357,11 @@ export default function Chat() {
                     minW="36px"
                     mt="2px"
                   >
-                    <Icon as={isUser ? MdPerson : MdAutoAwesome} boxSize="18px" color={isUser ? BRAND : 'white'} />
+                    <Icon
+                      as={isUser ? MdPerson : MdAutoAwesome}
+                      boxSize="18px"
+                      color={isUser ? BRAND : 'white'}
+                    />
                   </Flex>
 
                   <Flex
@@ -376,59 +407,61 @@ export default function Chat() {
 
           <Box ref={bottomRef} />
         </Flex>
+      </Flex>
 
-        {/* ✅ INPUT BAR: content дотор доороо тогтмол (footer-ийг дарахгүйгээр) */}
-        <Flex
-          position="sticky"
-          bottom={{ base: '0px', md: '0px' }}
-          zIndex={50}
-          bg={useColorModeValue('white', 'navy.900')}
-          borderTop="1px solid"
-          borderColor={borderColor}
-          px={{ base: '10px', md: '10px' }}
-          pt="12px"
-          pb="calc(env(safe-area-inset-bottom) + 12px)"
-        >
-          <Flex w="100%" gap="10px" align="center">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              minH="52px"
-              h="52px"
-              flex="1"
-              border="1px solid"
-              borderColor={borderColor}
-              borderRadius="14px"
-              px="14px"
-              fontSize="sm"
-              fontWeight="500"
-              _focus={{ borderColor: BRAND }}
-              color={inputColor}
-              _placeholder={placeholderColor}
-              placeholder="Type your message here..."
-              isDisabled={loading}
-            />
-            <Button
-              h="52px"
-              px={{ base: '18px', md: '26px' }}
-              borderRadius="14px"
-              bg={BRAND}
-              color="white"
-              _hover={{ opacity: 0.92 }}
-              _active={{ opacity: 0.86 }}
-              onClick={send}
-              isLoading={loading}
-              flexShrink={0}
-            >
-              Submit
-            </Button>
-          </Flex>
+      {/* ✅ INPUT BAR: fixed, footer дээр биш */}
+      <Flex
+        position="fixed"
+        left={{ base: 0, xl: '290px' }} // sidebar width
+        right="0"
+        bottom="0"
+        zIndex={999}
+        bg={useColorModeValue('white', 'navy.900')}
+        borderTop="1px solid"
+        borderColor={borderColor}
+        px={{ base: '10px', md: '10px' }}
+        pt="12px"
+        pb="calc(env(safe-area-inset-bottom) + 12px)"
+      >
+        <Flex w="100%" maxW="1000px" mx="auto" gap="10px" align="center">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            minH="52px"
+            h="52px"
+            flex="1"
+            border="1px solid"
+            borderColor={borderColor}
+            borderRadius="14px"
+            px="14px"
+            fontSize="sm"
+            fontWeight="500"
+            _focus={{ borderColor: BRAND }}
+            color={inputColor}
+            _placeholder={placeholderColor}
+            placeholder="Мессежээ бичээрэй..."
+            isDisabled={loading}
+          />
+          <Button
+            h="52px"
+            px={{ base: '18px', md: '26px' }}
+            borderRadius="14px"
+            bg={BRAND}
+            color="white"
+            _hover={{ opacity: 0.92 }}
+            _active={{ opacity: 0.86 }}
+            onClick={send}
+            isLoading={loading}
+            flexShrink={0}
+          >
+            Илгээх
+          </Button>
         </Flex>
       </Flex>
     </Flex>
