@@ -2,102 +2,112 @@ import { mode } from '@chakra-ui/theme-tools';
 
 export const globalStyles = {
   colors: {
+    // ✅ colors хэсгийг чинь өөрчлөхгүй (brand чинь хэвээр)
     brand: {
-      50: '#EAF3FA',
-      100: '#D6E9F5',
-      200: '#ADD3EB',
-      300: '#85BDE1',
-      400: '#5CA7D7',
-      500: '#1F6FB2', // BRAND
-      600: '#18598F',
-      700: '#12436C',
-      800: '#0C2D48',
-      900: '#061725',
+      100: '#E9E3FF',
+      200: '#422AFB',
+      300: '#422AFB',
+      400: '#7551FF',
+      500: '#1F6FB2',     
+      600: '#3311DB',
+      700: '#02044A',
+      800: '#190793',
+      900: '#11047A',
     },
-
-    // хуучин SDK-д хэрэглэгдэж байсан өнгө — secondary accent болгож үлдээлээ
-    brandAlt: {
-      500: '#3E6F96',
+    brandScheme: {
+      100: '#E9E3FF',
+      200: '#7551FF',
+      300: '#7551FF',
+      400: '#7551FF',
+      500: '#422AFB',
+      600: '#3311DB',
+      700: '#02044A',
+      800: '#190793',
+      900: '#02044A',
     },
-
+    brandTabs: {
+      100: '#E9E3FF',
+      200: '#422AFB',
+      300: '#422AFB',
+      400: '#422AFB',
+      500: '#422AFB',
+      600: '#3311DB',
+      700: '#02044A',
+      800: '#190793',
+      900: '#02044A',
+    },
+    secondaryGray: {
+      100: '#E0E5F2',
+      200: '#E2E8F0',
+      300: '#F4F7FE',
+      400: '#E9EDF7',
+      500: '#718096',
+      600: '#A3AED0',
+      700: '#707EAE',
+      800: '#707EAE',
+      900: '#1B2559',
+    },
+    red: { 100: '#FEEFEE', 500: '#EE5D50', 600: '#E31A1A' },
+    blue: { 50: '#EFF4FB', 500: '#3965FF' },
+    orange: { 100: '#FFF6DA', 500: '#FFB547' },
+    green: { 100: '#E6FAF5', 500: '#01B574' },
+    white: {
+      50: '#ffffff', 100: '#ffffff', 200: '#ffffff', 300: '#ffffff', 400: '#ffffff',
+      500: '#ffffff', 600: '#ffffff', 700: '#ffffff', 800: '#ffffff', 900: '#ffffff',
+    },
     navy: {
-      50: '#E9EFFA',
-      100: '#C7D6F2',
-      200: '#A6BEEA',
-      300: '#7F9BDA',
-      400: '#5B7AC8',
-      500: '#3C5AAE',
-      600: '#2D468B',
-      700: '#223667',
-      800: '#182646',
-      900: '#0F1B36', // ⬅️ DARK суурь (хар биш deep blue)
+      50: '#d0dcfb',
+      100: '#aac0fe',
+      200: '#a3b9f8',
+      300: '#728fea',
+      400: '#3652ba',
+      500: '#1b3bbb',
+      600: '#24388a',
+      700: '#1B254B',
+      800: '#111c44',
+      900: '#0b1437',
     },
-
-    gray: {
-      50: '#FFFFFF',
-      100: '#FAFCFE',
-      200: '#F1F5F9',
-      300: '#E2E8F0',
-      400: '#CBD5E1',
-      500: '#94A3B8',
-      600: '#64748B',
-      700: '#334155',
-      800: '#1F2A44',
-      900: '#141C2E',
-    },
+    gray: { 100: '#FAFCFE' },
   },
 
   styles: {
-    global: (props: any) => ({
-      html: {
-        fontFamily: 'Plus Jakarta Sans',
-      },
+    global: (props: any) => {
+      const isDark = props.colorMode === 'dark';
 
-      body: {
-        overflowX: 'hidden',
-        fontFamily: 'Plus Jakarta Sans',
-        color: mode('navy.900', 'gray.100')(props),
+      return {
+        html: {
+          fontFamily: 'Plus Jakarta Sans',
+        },
+        body: {
+          overflowX: 'hidden',
+          fontFamily: 'Plus Jakarta Sans',
 
-        /* ⬇️ LIGHT / DARK суурь */
-        bg: mode('#fdfeff', '#0F1B36')(props),
+          // ✅ Гол: dark үед solid navy.900 биш, “гэрэлтэй” gradient фон
+          bg: mode('#fdfeff', '#0b1437')(props),
 
-        /* ⬇️ DARK дээр “гэрэлтсэн” background */
-        backgroundImage: mode(
-          'none',
-          `
-          radial-gradient(
-            900px circle at 55% 18%,
-            rgba(31,111,178,0.25),
-            transparent 55%
-          ),
-          radial-gradient(
-            700px circle at 20% 80%,
-            rgba(62,111,150,0.18),
-            transparent 60%
-          ),
-          linear-gradient(
-            180deg,
-            #0F1B36 0%,
-            #0B1530 55%,
-            #081126 100%
-          )
-        `
-        )(props),
+          // ✅ Glow overlay (dark үед л ажиллана)
+          ...(isDark
+            ? {
+                backgroundImage: `
+                  radial-gradient(900px 500px at 20% 10%, rgba(66,42,251,0.35), rgba(0,0,0,0)),
+                  radial-gradient(700px 400px at 80% 0%, rgba(117,81,255,0.25), rgba(0,0,0,0)),
+                  radial-gradient(900px 600px at 50% 100%, rgba(57,101,255,0.12), rgba(0,0,0,0))
+                `,
+                backgroundRepeat: 'no-repeat',
+                backgroundAttachment: 'fixed',
+              }
+            : null),
 
-        backgroundAttachment: 'fixed',
-      },
+          // (optional) smooth text
+          WebkitFontSmoothing: 'antialiased',
+          MozOsxFontSmoothing: 'grayscale',
+        },
 
-      input: {
-        color: mode('gray.700', 'gray.100')(props),
-      },
-
-      textarea: {
-        color: mode('gray.700', 'gray.100')(props),
-      },
-
-      '::placeholder': {
-        color: mode('gray.500', 'gray.500')(props),
-      },
-    }),
+        // ✅ input color чинь light-д OK, dark-д саарал биш болгоё
+        input: {
+          color: mode('gray.700', 'whiteAlpha.900')(props),
+        },
+      };
+    },
   },
 };
