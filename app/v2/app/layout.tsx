@@ -1,30 +1,40 @@
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+'use client';
 
-function supabaseServer() {
-  const cookieStore = cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-          } catch {}
-        },
-      },
-    },
-  );
-}
+import { ReactNode, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/browser';
 
-export default async function V2AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = supabaseServer();
-  const { data } = await supabase.auth.getUser();
+export default function V2AppLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
 
-  if (!data.user) redirect('/login?next=/v2/app/chat');
+  useEffect(() => {
+    let alive = true;
+
+    const check = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!alive) return;
+
+      if (!data.user) {
+        router.replace('/login?next=/v2/app/chat');
+        return;
+      }
+      setReady(true);
+    };
+
+    check();
+
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      check();
+    });
+
+    return () => {
+      alive = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  if (!ready) return null; // эсвэл loading UI
 
   return <>{children}</>;
 }
