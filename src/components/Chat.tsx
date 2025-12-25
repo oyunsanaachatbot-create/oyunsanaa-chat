@@ -29,7 +29,6 @@ import { createClient } from '@supabase/supabase-js';
 const Bg = '/img/chat/bg-image.png';
 const BRAND = '#1F6FB2';
 
-// ✅ Supabase client (browser)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -50,11 +49,9 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // attachment
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>(''); // objectURL
+  const [imagePreview, setImagePreview] = useState<string>('');
 
-  // copied hint
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const maxLen = useMemo(() => 4000, []);
@@ -64,32 +61,25 @@ export default function Chat() {
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
   const textColor = useColorModeValue('navy.800', 'white');
   const subText = useColorModeValue('gray.500', 'whiteAlpha.700');
-  const safePageBg = useColorModeValue('white', 'navy.900');
+  const pageBg = useColorModeValue('white', 'navy.900');
   const composerBg = useColorModeValue('white', 'whiteAlpha.50');
   const hintBg = useColorModeValue('blackAlpha.800', 'whiteAlpha.200');
 
-  // ✅ Header-ээс болоод эхний мессеж даруулахгүй padding
-  // Танай header өндөр өөр байж магадгүй тул арай generous тавилаа.
-  const TOP_SAFE = { base: '120px', md: '24px' };
+  // ✅ Header overlay-оос хамгаалах (template header өндөртэй бол base дээр өндөр өгнө)
+  const TOP_SAFE = { base: '96px', md: '20px' };
 
-  // ✅ Fixed composer өндөр (approx) — доод хэсэгт messages дарагдахгүй
-  const BOTTOM_SAFE = { base: '140px', md: '120px' };
-
-  // keep focus
   useEffect(() => {
     if (loading) return;
     const t = window.setTimeout(() => taRef.current?.focus(), 0);
     return () => window.clearTimeout(t);
   }, [loading, messages.length]);
 
-  // scroll bottom
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages.length, loading]);
 
-  // autosize
   const autosize = () => {
     const el = taRef.current;
     if (!el) return;
@@ -99,7 +89,6 @@ export default function Chat() {
   };
   useEffect(() => autosize(), [input]);
 
-  // cleanup objectURL
   useEffect(() => {
     return () => {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -157,19 +146,14 @@ export default function Chat() {
     />
   );
 
-  // ✅ 1) Chat id автоматаар ол/үүсгэнэ
-  // ✅ 2) History ачаална
+  // ✅ Init: chat id олно/үүсгэнэ + history ачаална
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) {
         setMessages([
-          {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: 'Нэвтрээгүй байна (session алга). Дахин login хийнэ үү.',
-          },
+          { id: crypto.randomUUID(), role: 'assistant', content: 'Login хийгдээгүй байна. Дахин нэвтэрнэ үү.' },
         ]);
         return;
       }
@@ -178,12 +162,11 @@ export default function Chat() {
       const user = userData?.user;
       if (!user) {
         setMessages([
-          { id: crypto.randomUUID(), role: 'assistant', content: 'User олдсонгүй. Дахин login хийнэ үү.' },
+          { id: crypto.randomUUID(), role: 'assistant', content: 'User олдсонгүй. Дахин нэвтэрнэ үү.' },
         ]);
         return;
       }
 
-      // хамгийн сүүлийн chat-аа олно
       const { data: lastChat } = await supabase
         .from('chats')
         .select('id')
@@ -192,33 +175,26 @@ export default function Chat() {
         .limit(1)
         .maybeSingle();
 
-    let cid: string | null = lastChat?.id ?? null;
+      let cid: string | null = lastChat?.id ?? null;
 
-     if (!cid) {
-  const { data: newChat, error: chatErr } = await supabase
-    .from('chats')
-    .insert({ user_id: user.id, title: 'New chat' })
-    .select('id')
-    .single();
+      if (!cid) {
+        const { data: newChat, error: chatErr } = await supabase
+          .from('chats')
+          .insert({ user_id: user.id, title: 'New chat' })
+          .select('id')
+          .single();
 
-  if (chatErr || !newChat?.id) {
-    setMessages([
-      {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: `Chat үүсгэж чадсангүй: ${chatErr?.message || ''}`,
-      },
-    ]);
-    return;
-  }
+        if (chatErr || !newChat?.id) {
+          setMessages([
+            { id: crypto.randomUUID(), role: 'assistant', content: `Chat үүсгэж чадсангүй: ${chatErr?.message || ''}` },
+          ]);
+          return;
+        }
+        cid = newChat.id;
+      }
 
-  cid = newChat.id;
-}
+      setChatId(cid);
 
-// 🔥 ЭНД cid 100% string болсон
-setChatId(cid);
-
-      // history ачаална
       const { data: rows } = await supabase
         .from('messages')
         .select('id, role, content, created_at')
@@ -250,25 +226,23 @@ setChatId(cid);
     if (!chatId) {
       setMessages((p) => [
         ...p,
-        { id: crypto.randomUUID(), role: 'assistant', content: 'Chat ID бэлэн биш байна. Дахин оролдоно уу.' },
+        { id: crypto.randomUUID(), role: 'assistant', content: 'Chat бэлэн биш байна. Дахин оролдоно уу.' },
       ]);
       return;
     }
 
-    // ✅ session token (401 засна)
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     if (!token) {
       setMessages((p) => [
         ...p,
-        { id: crypto.randomUUID(), role: 'assistant', content: 'Нэвтрээгүй байна (token алга). Дахин login хийнэ үү.' },
+        { id: crypto.randomUUID(), role: 'assistant', content: 'Login хийгдээгүй байна. Дахин нэвтэрнэ үү.' },
       ]);
       return;
     }
 
     const userId = crypto.randomUUID();
     const assistantId = crypto.randomUUID();
-
     const messageImageUrl = hasImage ? imagePreview : undefined;
 
     setMessages((p) => [
@@ -278,7 +252,6 @@ setChatId(cid);
     ]);
 
     if (hasImage) clearComposer();
-
     setInput('');
     setLoading(true);
 
@@ -289,14 +262,12 @@ setChatId(cid);
         const fd = new FormData();
         fd.append('model', model);
         fd.append('inputCode', trimmed || '');
-        fd.append('chat_id', chatId);            // ✅ chat_id явуулна
+        fd.append('chat_id', chatId);
         fd.append('image', imageFile as File);
 
         res = await fetch('/api/chatAPI', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,   // ✅ token явуулна (401 арилна)
-          },
+          headers: { Authorization: `Bearer ${token}` },
           body: fd,
         });
       } else {
@@ -304,23 +275,15 @@ setChatId(cid);
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,   // ✅ token явуулна (401 арилна)
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            chat_id: chatId,                    // ✅ chat_id явуулна
-            inputCode: trimmed,
-            model,
-          }),
+          body: JSON.stringify({ chat_id: chatId, inputCode: trimmed, model }),
         });
       }
 
       if (!res.ok) {
         const t = await res.text().catch(() => '');
-        setMessages((p) =>
-          p.map((m) =>
-            m.id === assistantId ? { ...m, content: `API error: ${t || res.status}` } : m
-          )
-        );
+        setMessages((p) => p.map((m) => (m.id === assistantId ? { ...m, content: `API error: ${t || res.status}` } : m)));
         return;
       }
       if (!res.body) return;
@@ -342,7 +305,8 @@ setChatId(cid);
   };
 
   return (
-    <Flex direction="column" h="100dvh" w="100%" bg={safePageBg}>
+    // ✅ Энд fixed битгий ашиглана (template layout-тай мөргөлдөнө)
+    <Flex direction="column" h="100dvh" w="100%" bg={pageBg} overflow="hidden">
       <Img
         src={Bg}
         position="fixed"
@@ -355,7 +319,7 @@ setChatId(cid);
         zIndex={0}
       />
 
-      {/* ✅ Scroll area */}
+      {/* ✅ Messages scroll area */}
       <Flex
         ref={scrollRef}
         direction="column"
@@ -364,9 +328,8 @@ setChatId(cid);
         overflowY="auto"
         zIndex={1}
         px={{ base: '14px', md: '0px' }}
-        pt={TOP_SAFE}          // ✅ header дор орохгүй
-        pb={BOTTOM_SAFE}       // ✅ fixed composer дээр даруулахгүй
-        scrollPaddingTop="140px"
+        pt={TOP_SAFE}
+        pb="18px"
       >
         <Flex direction="column" mx="auto" w="100%" maxW="920px" gap="14px">
           {messages.length === 0 ? (
@@ -385,16 +348,7 @@ setChatId(cid);
               return (
                 <Flex key={m.id} w="100%" justify={isUser ? 'flex-end' : 'flex-start'} align="flex-start" gap="10px">
                   {!isUser && (
-                    <Flex
-                      borderRadius="full"
-                      justify="center"
-                      align="center"
-                      bg={BRAND}
-                      h="34px"
-                      minW="34px"
-                      mt="2px"
-                      flexShrink={0}
-                    >
+                    <Flex borderRadius="full" justify="center" align="center" bg={BRAND} h="34px" minW="34px" mt="2px" flexShrink={0}>
                       <Icon as={MdAutoAwesome} boxSize="16px" color="white" />
                     </Flex>
                   )}
@@ -440,14 +394,7 @@ setChatId(cid);
                     >
                       {isUser ? (
                         <>
-                          <ActionBtn
-                            icon={MdEdit}
-                            aria="edit"
-                            onClick={() => {
-                              setInput(m.content || '');
-                              taRef.current?.focus();
-                            }}
-                          />
+                          <ActionBtn icon={MdEdit} aria="edit" onClick={() => { setInput(m.content || ''); taRef.current?.focus(); }} />
                           <ActionBtn icon={MdContentCopy} aria="copy" onClick={() => copyToClipboard(m.content || '', m.id)} />
                         </>
                       ) : (
@@ -467,17 +414,7 @@ setChatId(cid);
                   </Flex>
 
                   {isUser && (
-                    <Flex
-                      borderRadius="full"
-                      justify="center"
-                      align="center"
-                      border="1px solid"
-                      borderColor={borderColor}
-                      h="34px"
-                      minW="34px"
-                      mt="2px"
-                      flexShrink={0}
-                    >
+                    <Flex borderRadius="full" justify="center" align="center" border="1px solid" borderColor={borderColor} h="34px" minW="34px" mt="2px" flexShrink={0}>
                       <Icon as={MdPerson} boxSize="16px" color={BRAND} />
                     </Flex>
                   )}
@@ -488,16 +425,14 @@ setChatId(cid);
         </Flex>
       </Flex>
 
-      {/* ✅ Composer fixed (савлахгүй) */}
+      {/* ✅ Composer: template-тэй мөргөлдөхгүй “sticky” */}
       <Box
-        position="fixed"
-        left="0"
-        right="0"
+        position="sticky"
         bottom="0"
-        zIndex={20}
+        zIndex={5}
         borderTop="1px solid"
         borderColor={borderColor}
-        bg={safePageBg}
+        bg={pageBg}
         pb="calc(env(safe-area-inset-bottom) + 12px)"
       >
         <Flex w="100%" maxW="920px" mx="auto" px={{ base: '14px', md: '0px' }} py="12px">
@@ -535,16 +470,7 @@ setChatId(cid);
             </Box>
 
             {imagePreview && (
-              <Box
-                position="relative"
-                w="44px"
-                h="44px"
-                flexShrink={0}
-                borderRadius="12px"
-                overflow="hidden"
-                border="1px solid"
-                borderColor={borderColor}
-              >
+              <Box position="relative" w="44px" h="44px" flexShrink={0} borderRadius="12px" overflow="hidden" border="1px solid" borderColor={borderColor}>
                 <Img src={imagePreview} w="100%" h="100%" objectFit="cover" alt="attachment" />
                 <IconButton
                   aria-label="remove image"
