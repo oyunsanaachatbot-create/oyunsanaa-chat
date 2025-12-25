@@ -28,10 +28,11 @@ import { LuHistory } from 'react-icons/lu';
 import { MdOutlineManageAccounts, MdOutlineSettings } from 'react-icons/md';
 
 import { supabase } from '@/lib/supabase/browser';
+import { usePathname } from 'next/navigation';
 
 interface SidebarContentProps extends PropsWithChildren {
   setApiKey?: (key: string) => void;
-  onClose?: () => void; // ✅ mobile drawer хаах
+  onClose?: () => void;
   [x: string]: any;
 }
 
@@ -39,6 +40,8 @@ type UserMini = { name: string; email: string } | null;
 
 export default function SidebarContent(props: SidebarContentProps) {
   const { setApiKey, onClose } = props;
+  const pathname = usePathname();
+  const isGuest = pathname?.startsWith('/guest');
 
   const textColor = useColorModeValue('navy.700', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
@@ -54,7 +57,6 @@ export default function SidebarContent(props: SidebarContentProps) {
   );
   const gray = useColorModeValue('gray.500', 'white');
 
-  // ✅ auth state
   const [user, setUser] = useState<UserMini>(null);
 
   useEffect(() => {
@@ -63,7 +65,6 @@ export default function SidebarContent(props: SidebarContentProps) {
     const load = async () => {
       const { data } = await supabase.auth.getUser();
       const u = data.user;
-
       if (!alive) return;
 
       if (!u) {
@@ -82,10 +83,7 @@ export default function SidebarContent(props: SidebarContentProps) {
     };
 
     load();
-
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      load();
-    });
+    const { data: sub } = supabase.auth.onAuthStateChange(load);
 
     return () => {
       alive = false;
@@ -93,58 +91,31 @@ export default function SidebarContent(props: SidebarContentProps) {
     };
   }, []);
 
-  // ✅ Guest үед: бүртгүүлэх тусдаа UI (/signup)
-  const goSignup = () => {
-    window.location.href = '/signup?next=/chat';
+  const goRegister = () => {
+    window.location.href = '/register?next=/chat';
   };
 
-  // ✅ Login хийсэн үед: logout -> login page руу (чи заасан яг тэр URL)
   const doLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = 'https://chat.oyunsanaa.com/login?next=/chat';
+    window.location.href = '/login?next=/chat';
   };
 
   return (
-    <Flex
-      direction="column"
-      height="100%"
-      pt="20px"
-      pb="26px"
-      borderRadius="30px"
-      maxW="285px"
-      px="20px"
-    >
+    <Flex direction="column" height="100%" pt="20px" pb="26px" borderRadius="30px" maxW="285px" px="20px">
       <Brand />
 
       <Stack direction="column" mb="auto" mt="8px">
-        <Box ps="0px" pe={{ md: '0px', '2xl': '0px' }}>
-          {/* ✅ menu item дармагц mobile drawer хаагдана */}
+        <Box ps="0px">
           <Links onClose={onClose} />
         </Box>
       </Stack>
 
-      {/* ✅ энэ modal-ыг одоохондоо оролдохгүй */}
-      <APIModal setApiKey={setApiKey} sidebar={true} />
+      <APIModal setApiKey={setApiKey} sidebar />
 
-      <Flex
-        mt="8px"
-        justifyContent="center"
-        alignItems="center"
-        boxShadow={shadowPillBar}
-        borderRadius="30px"
-        p="14px"
-      >
+      <Flex mt="8px" justifyContent="center" alignItems="center" boxShadow={shadowPillBar} borderRadius="30px" p="14px">
         <NextAvatar h="34px" w="34px" src={avatar4} me="10px" />
 
-        {/* ✅ Доор зөвхөн нэр (mail энд харагдахгүй) */}
-        <Text
-          color={textColor}
-          fontSize="xs"
-          fontWeight="600"
-          me="10px"
-          noOfLines={1}
-          maxW="120px"
-        >
+        <Text color={textColor} fontSize="xs" fontWeight="600" me="10px" noOfLines={1} maxW="120px">
           {user?.name ?? 'Oyunsanaa'}
         </Text>
 
@@ -152,167 +123,61 @@ export default function SidebarContent(props: SidebarContentProps) {
           <MenuButton
             as={Button}
             variant="transparent"
-            aria-label=""
             border="1px solid"
             borderColor={borderColor}
             borderRadius="full"
             w="34px"
             h="34px"
-            px="0px"
-            p="0px"
+            p="0"
             minW="34px"
             me="10px"
-            justifyContent={'center'}
-            alignItems="center"
             color={iconColor}
           >
-            <Flex align="center" justifyContent="center">
-              <Icon as={MdOutlineSettings} width="18px" height="18px" color="inherit" />
-            </Flex>
+            <Icon as={MdOutlineSettings} w="18px" h="18px" />
           </MenuButton>
 
-          <MenuList
-            ms="-20px"
-            py="18px"
-            ps="20px"
-            pe="20px"
-            w="246px"
-            borderRadius="16px"
-            transform="translate(-19px, -62px)!important"
-            border="0px"
-            boxShadow={shadow}
-            bg={bgColor}
-          >
-            {/* ✅ Dropdown дээр: Hey + email (чи хүссэнээрээ) */}
+          <MenuList ms="-20px" py="18px" ps="20px" pe="20px" w="246px" borderRadius="16px" boxShadow={shadow} bg={bgColor}>
             <Box mb="18px">
               <Text fontWeight="700" fontSize="sm" color={textColor}>
                 👋 Hey, {user?.name ?? 'sain uu'}
               </Text>
-              <Text fontSize="xs" opacity={0.75} color={textColor} mt="4px">
+              <Text fontSize="xs" opacity={0.75} color={textColor}>
                 {user?.email ?? 'Not signed in'}
               </Text>
             </Box>
 
-            <Box mb="30px">
-              <Flex align="center" w="100%" cursor={'not-allowed'}>
-                <Icon
-                  as={MdOutlineManageAccounts}
-                  width="24px"
-                  height="24px"
-                  color={gray}
-                  me="12px"
-                  opacity={'0.4'}
-                />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity={'0.4'}>
-                  Profile Settings
-                </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
-                  <Badge
-                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
-                    colorScheme="brand"
-                    borderRadius="25px"
-                    color="brand.500"
-                    textTransform={'none'}
-                    letterSpacing="0px"
-                    px="8px"
-                  >
-                    PRO
-                  </Badge>
-                </Link>
-              </Flex>
-            </Box>
-
-            <Box mb="30px">
-              <Flex cursor={'not-allowed'} align="center">
-                <Icon
-                  as={LuHistory}
-                  width="24px"
-                  height="24px"
-                  color={gray}
-                  opacity="0.4"
-                  me="12px"
-                />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
-                  History
-                </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
-                  <Badge
-                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
-                    colorScheme="brand"
-                    borderRadius="25px"
-                    color="brand.500"
-                    textTransform={'none'}
-                    letterSpacing="0px"
-                    px="8px"
-                  >
-                    PRO
-                  </Badge>
-                </Link>
-              </Flex>
-            </Box>
-
-            <Box mb="30px">
-              <Flex cursor={'not-allowed'} align="center">
-                <Icon
-                  as={RoundedChart}
-                  width="24px"
-                  height="24px"
-                  color={gray}
-                  opacity="0.4"
-                  me="12px"
-                />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
-                  Usage
-                </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
-                  <Badge
-                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
-                    colorScheme="brand"
-                    borderRadius="25px"
-                    color="brand.500"
-                    textTransform={'none'}
-                    letterSpacing="0px"
-                    px="8px"
-                  >
-                    PRO
-                  </Badge>
-                </Link>
-              </Flex>
-            </Box>
-
-            <Box>
-              <Flex cursor={'not-allowed'} align="center">
-                <Icon
-                  as={IoMdPerson}
-                  width="24px"
-                  height="24px"
-                  color={gray}
-                  opacity="0.4"
-                  me="12px"
-                />
-                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
-                  My Plan
-                </Text>
-                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
-                  <Badge
-                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
-                    colorScheme="brand"
-                    borderRadius="25px"
-                    color="brand.500"
-                    textTransform={'none'}
-                    letterSpacing="0px"
-                    px="8px"
-                  >
-                    PRO
-                  </Badge>
-                </Link>
-              </Flex>
-            </Box>
+            {[['Profile Settings', MdOutlineManageAccounts],
+              ['History', LuHistory],
+              ['Usage', RoundedChart],
+              ['My Plan', IoMdPerson]].map(([label, IconCmp]: any) => (
+              <Box key={label} mb="20px">
+                <Flex align="center" cursor="not-allowed">
+                  <Icon as={IconCmp} w="24px" h="24px" color={gray} me="12px" opacity={0.4} />
+                  <Text color={gray} fontSize="sm" opacity={0.4}>{label}</Text>
+                  <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                    <Badge colorScheme="brand" borderRadius="25px" px="8px">PRO</Badge>
+                  </Link>
+                </Flex>
+              </Box>
+            ))}
           </MenuList>
         </Menu>
 
-        {/* ✅ Гол хүсэлт: guest үед Бүртгүүлэх, login үед Log out */}
-        {user ? (
+        {isGuest ? (
+          <Button
+            onClick={goRegister}
+            variant="transparent"
+            border="1px solid"
+            borderColor={borderColor}
+            borderRadius="full"
+            w="34px"
+            h="34px"
+            minW="34px"
+            title="Бүртгүүлэх"
+          >
+            <Icon as={IoMdPerson} w="16px" h="16px" />
+          </Button>
+        ) : (
           <Button
             onClick={doLogout}
             variant="transparent"
@@ -321,30 +186,12 @@ export default function SidebarContent(props: SidebarContentProps) {
             borderRadius="full"
             w="34px"
             h="34px"
-            px="0px"
             minW="34px"
-            justifyContent={'center'}
-            alignItems="center"
             title="Log out"
+            isDisabled={!user}
+            opacity={!user ? 0.6 : 1}
           >
-            <Icon as={FiLogOut} width="16px" height="16px" color="inherit" />
-          </Button>
-        ) : (
-          <Button
-            onClick={goSignup}
-            variant="transparent"
-            border="1px solid"
-            borderColor={borderColor}
-            borderRadius="full"
-            w="34px"
-            h="34px"
-            px="0px"
-            minW="34px"
-            justifyContent={'center'}
-            alignItems="center"
-            title="Бүртгүүлэх"
-          >
-            <Icon as={IoMdPerson} width="16px" height="16px" color="inherit" />
+            <Icon as={FiLogOut} w="16px" h="16px" />
           </Button>
         )}
       </Flex>
