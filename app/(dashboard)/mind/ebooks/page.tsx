@@ -1,5 +1,5 @@
-import EbooksApp from "@/features/mind/ebooks/EbooksApp";
+import NotesApp from "@/features/mind/ebooks/NotesApp";
 
 export default function Page() {
-  return <EbooksApp />;
+  return <NotesApp />;
 }
