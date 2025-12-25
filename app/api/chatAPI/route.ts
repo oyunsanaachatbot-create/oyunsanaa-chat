@@ -1,7 +1,6 @@
 // app/api/chatAPI/route.ts
 import OpenAI from "openai";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
@@ -10,29 +9,6 @@ const openai = new OpenAI({
   timeout: 60_000,
   maxRetries: 2,
 });
-
-// ✅ Next.js 15: cookies() => Promise, тиймээс async + await
-async function supabaseServer() {
-  const cookieStore = await cookies();
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name: string, options: any) {
-          cookieStore.set({ name, value: "", ...options });
-        },
-      },
-    }
-  );
-}
 
 function toTextStreamWithCapture(
   stream: AsyncIterable<any>,
@@ -57,7 +33,7 @@ function toTextStreamWithCapture(
         try {
           await onDone((full || "").trim());
         } catch {
-          // save error-г stream дээр гаргахгүй
+          // ignore
         }
         controller.close();
       }
@@ -90,9 +66,26 @@ export async function POST(req: Request) {
       });
     }
 
-    const supabase = await supabaseServer();
+    // ✅ Энэ бол гол: token header
+    const authHeader = req.headers.get("authorization") || "";
+    if (!authHeader.toLowerCase().startsWith("bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
-    // ✅ logged-in user
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: { Authorization: authHeader }, // ✅ RLS + getUser бүгд ажиллана
+        },
+      }
+    );
+
+    // ✅ Logged-in user (token-оор)
     const { data: authData, error: authErr } = await supabase.auth.getUser();
     if (authErr || !authData?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -111,7 +104,6 @@ export async function POST(req: Request) {
 
     if (contentType.includes("multipart/form-data")) {
       const form = await req.formData();
-
       model = String(form.get("model") || "gpt-4o");
       inputCode = String(form.get("inputCode") || "");
       chat_id = String(form.get("chat_id") || "");
@@ -134,7 +126,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // ✅ chat ownership check
+    // ✅ chat эзэмшигч мөн эсэх
     const { data: chatRow } = await supabase
       .from("chats")
       .select("id")
@@ -149,11 +141,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // ✅ Oyunsanaa system
+    // ✅ Oyunsanaa system prompt
     const system =
       'Чи Oyunsanaa нэртэй Монгол хэлтэй дулаан сэтгэлийн туслагч. "Би 2023 он хүртэл" гэх мэт зүйл хэлэхгүй. Хэрэглэгчийн асуултанд шууд төвлөрч, ойлгомжтой, эелдэг хариул.';
 
-    // ✅ system message 1 удаа
+    // ✅ system message нэг л удаа
     const { data: sysExists } = await supabase
       .from("messages")
       .select("id")
@@ -171,7 +163,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // ✅ save user message (text only)
+    // ✅ user message хадгалах (text)
     const userText = (inputCode || "").trim();
     const safeUserText = userText.length ? userText : " ";
 
@@ -182,7 +174,7 @@ export async function POST(req: Request) {
       content: safeUserText,
     });
 
-    // ✅ memory: last N messages
+    // ✅ memory: last N
     const N = 30;
     const { data: recent } = await supabase
       .from("messages")
@@ -200,7 +192,7 @@ export async function POST(req: Request) {
     if (!model || typeof model !== "string") model = "gpt-4o";
     if (imageDataUrl && model.startsWith("gpt-3.5")) model = "gpt-4o";
 
-    // ✅ If image, replace last user msg with rich content
+    // ✅ image байвал last user msg-г rich content болгоно
     let messagesForModel: any[] = history;
     if (imageDataUrl) {
       const userContent: any[] = [];
@@ -210,14 +202,12 @@ export async function POST(req: Request) {
       messagesForModel = history.slice(0, -1).concat([{ role: "user", content: userContent }]);
     }
 
-    // ✅ OpenAI stream
     const stream = await openai.chat.completions.create({
       model,
       stream: true,
       messages: messagesForModel,
     });
 
-    // ✅ stream back + save assistant after stream ends
     const rs = toTextStreamWithCapture(stream, async (fullText) => {
       const replyToSave = fullText || "[empty]";
       await supabase.from("messages").insert({
