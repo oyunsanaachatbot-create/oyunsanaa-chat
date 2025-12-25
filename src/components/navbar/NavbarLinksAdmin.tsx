@@ -23,11 +23,30 @@ import APIModal from '@/components/apiModal';
 import NavLink from '../link/NavLink';
 import routes from '@/routes';
 
+// ✅ нэмсэн
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/browser';
+
+type UserMini = { email: string; name: string };
+
+function initialsFromName(name: string) {
+  const parts = (name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const a = (parts[0]?.[0] ?? 'U').toUpperCase();
+  const b = (parts[1]?.[0] ?? '').toUpperCase();
+  return (a + b).slice(0, 2);
+}
+
 export default function HeaderLinks(props: {
   secondary: boolean;
   setApiKey: any;
 }) {
   const { secondary, setApiKey } = props;
+  const router = useRouter();
+
   const { colorMode, toggleColorMode } = useColorMode();
   // Chakra Color Mode
   const navbarIcon = useColorModeValue('gray.500', 'white');
@@ -47,6 +66,57 @@ export default function HeaderLinks(props: {
     { bg: 'gray.200' },
     { bg: 'whiteAlpha.200' },
   );
+
+  // ✅ user state
+  const [user, setUser] = useState<UserMini | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    const load = async () => {
+      const { data } = await supabase.auth.getUser();
+      const u = data.user;
+
+      if (!alive) return;
+
+      if (!u) {
+        setUser(null);
+        return;
+      }
+
+      const email = u.email ?? '';
+      const fallback = (email || 'User').split('@')[0];
+      const name =
+        (u.user_metadata?.full_name as string) ||
+        (u.user_metadata?.name as string) ||
+        fallback;
+
+      setUser({ email, name });
+    };
+
+    load();
+
+    // auth өөрчлөгдвөл header автоматаар шинэчлэгдэнэ
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      load();
+    });
+
+    return () => {
+      alive = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  const initials = useMemo(() => initialsFromName(user?.name ?? 'User'), [user?.name]);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    router.replace('/login?next=/chat');
+  };
+
+  const goLogin = () => {
+    router.replace('/login?next=/chat');
+  };
 
   return (
     <Flex
@@ -95,13 +165,8 @@ export default function HeaderLinks(props: {
           minW={{ base: 'unset' }}
           maxW={{ base: '360px', md: 'unset' }}
         >
-          {/* <Flex bgImage={navImage} borderRadius="16px" mb="28px" alt="" /> */}
           <Flex flexDirection="column">
-            <Link
-              isExternal
-              w="100%"
-              href="https://horizon-ui.com/ai-template/"
-            >
+            <Link isExternal w="100%" href="https://horizon-ui.com/ai-template/">
               <Button
                 variant="primary"
                 py="20px"
@@ -115,11 +180,7 @@ export default function HeaderLinks(props: {
                 Buy Horizon AI Template
               </Button>
             </Link>
-            <Link
-              isExternal
-              w="100%"
-              href="https://horizon-ui.com/docs-ai-template/"
-            >
+            <Link isExternal w="100%" href="https://horizon-ui.com/docs-ai-template/">
               <Button
                 bg={buttonBg}
                 border="1px solid"
@@ -139,11 +200,7 @@ export default function HeaderLinks(props: {
                 See Documentation
               </Button>
             </Link>
-            <Link
-              w="100%"
-              isExternal
-              href="https://github.com/horizon-ui/chatgpt-ai-template"
-            >
+            <Link w="100%" isExternal href="https://github.com/horizon-ui/chatgpt-ai-template">
               <Button
                 w="100%"
                 h="44px"
@@ -178,6 +235,8 @@ export default function HeaderLinks(props: {
           as={colorMode === 'light' ? IoMdMoon : IoMdSunny}
         />
       </Button>
+
+      {/* ✅ User menu */}
       <Menu>
         <MenuButton p="0px" style={{ position: 'relative' }}>
           <Box
@@ -190,10 +249,11 @@ export default function HeaderLinks(props: {
           />
           <Center top={0} left={0} position={'absolute'} w={'100%'} h={'100%'}>
             <Text fontSize={'xs'} fontWeight="bold" color={'white'}>
-              AP
+              {initials}
             </Text>
           </Center>
         </MenuButton>
+
         <MenuList
           boxShadow={shadow}
           p="0px"
@@ -202,11 +262,11 @@ export default function HeaderLinks(props: {
           bg={menuBg}
           border="none"
         >
-          <Flex w="100%" mb="0px">
+          <Flex w="100%" mb="0px" flexDirection="column">
             <Text
               ps="20px"
               pt="16px"
-              pb="10px"
+              pb="6px"
               w="100%"
               borderBottom="1px solid"
               borderColor={borderColor}
@@ -214,9 +274,24 @@ export default function HeaderLinks(props: {
               fontWeight="700"
               color={textColor}
             >
-              👋&nbsp; Hey, Adela
+              👋&nbsp; Hey, {user?.name ?? 'Guest'}
+            </Text>
+
+            {/* email line */}
+            <Text
+              ps="20px"
+              pb="10px"
+              w="100%"
+              borderBottom="1px solid"
+              borderColor={borderColor}
+              fontSize="xs"
+              opacity={0.75}
+              color={textColor}
+            >
+              {user?.email ?? 'Not signed in'}
             </Text>
           </Flex>
+
           <Flex flexDirection="column" p="10px">
             <NavLink href="/settings">
               <MenuItem
@@ -231,6 +306,7 @@ export default function HeaderLinks(props: {
                 </Text>
               </MenuItem>
             </NavLink>
+
             <MenuItem
               _hover={{ bg: 'none' }}
               _focus={{ bg: 'none' }}
@@ -242,17 +318,35 @@ export default function HeaderLinks(props: {
                 Newsletter Settings
               </Text>
             </MenuItem>
-            <MenuItem
-              _hover={{ bg: 'none' }}
-              _focus={{ bg: 'none' }}
-              color="red.400"
-              borderRadius="8px"
-              px="14px"
-            >
-              <Text fontWeight="500" fontSize="sm">
-                Log out
-              </Text>
-            </MenuItem>
+
+            {/* ✅ Login/Logout зөв холбосон */}
+            {user ? (
+              <MenuItem
+                onClick={logout}
+                _hover={{ bg: 'none' }}
+                _focus={{ bg: 'none' }}
+                color="red.400"
+                borderRadius="8px"
+                px="14px"
+              >
+                <Text fontWeight="500" fontSize="sm">
+                  Log out
+                </Text>
+              </MenuItem>
+            ) : (
+              <MenuItem
+                onClick={goLogin}
+                _hover={{ bg: 'none' }}
+                _focus={{ bg: 'none' }}
+                color={textColor}
+                borderRadius="8px"
+                px="14px"
+              >
+                <Text fontWeight="600" fontSize="sm">
+                  Log in
+                </Text>
+              </MenuItem>
+            )}
           </Flex>
         </MenuList>
       </Menu>
