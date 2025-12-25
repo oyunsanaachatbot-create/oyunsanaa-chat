@@ -4,65 +4,96 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/browser';
 
-const BRAND = '#1F6FB2';
-
 export default function UpdatePasswordPage() {
   const router = useRouter();
-  const [pw1, setPw1] = useState('');
-  const [pw2, setPw2] = useState('');
+  const [checking, setChecking] = useState(true);
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
 
-  // Зарим тохиолдолд link-ээр ирэхэд session үүсээгүй байж болно.
-  // Тэгэхээр энэ page өөрөө байх нь хамгийн чухал.
   useEffect(() => {
-    // optional: энд ямар нэг шалгалт хийх шаардлагагүй, UI гаргаад updateUser л хийхэд хангалттай.
+    // ✅ Supabase recovery линкээр орж ирэхэд URL дээр token-ууд ирдэг.
+    // Supabase JS нь үүнийг уншаад session үүсгэх ёстой. Бид "session байгаа эсэх"-ийг шалгана.
+    const run = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        setMsg('Auth session missing. Password reset link-ээ дахин нээж үзээрэй.');
+      }
+      setChecking(false);
+    };
+    run();
   }, []);
 
   const onUpdate = async () => {
-    setErr(null);
-    setOk(null);
+    setMsg(null);
 
-    if (!pw1 || pw1.length < 6) return setErr('Нууц үг хамгийн багадаа 6 тэмдэгт байг.');
-    if (pw1 !== pw2) return setErr('Нууц үг 2 талдаа адил биш байна.');
+    if (!password || password.length < 6) {
+      setMsg('Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой.');
+      return;
+    }
+    if (password !== password2) {
+      setMsg('Нууц үг таарахгүй байна.');
+      return;
+    }
 
     setBusy(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: pw1 });
+      const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
-      setOk('Амжилттай шинэчиллээ ✅ Одоо login хийнэ.');
-      // шинэ нууц үг тавигдсаны дараа login руу явуулчих
-      setTimeout(() => router.replace('/login'), 600);
+      setMsg('✅ Нууц үг амжилттай шинэчлэгдлээ. Login руу шилжүүлж байна...');
+      setTimeout(() => router.replace('/login?next=/chat'), 900);
     } catch (e: any) {
-      setErr(e?.message || 'Алдаа гарлаа');
+      setMsg(e?.message || 'Алдаа гарлаа');
     } finally {
       setBusy(false);
     }
   };
 
+  if (checking) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2>Update password</h2>
+        <div>Checking session...</div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0b1a2a', color: 'white' }}>
-      <div style={{ width: 'min(520px, 92vw)', borderRadius: 18, padding: 22, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
-        <h2 style={{ margin: 0, marginBottom: 14 }}>Шинэ нууц үг</h2>
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0b1a2a' }}>
+      <div style={{ width: 'min(520px, 92vw)', borderRadius: 18, padding: 22, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: 'white' }}>
+        <h1 style={{ textAlign: 'center', margin: '4px 0 14px' }}>Шинэ нууц үг</h1>
 
         <label style={{ display: 'block', opacity: 0.9, marginBottom: 6 }}>New password</label>
-        <input value={pw1} onChange={(e) => setPw1(e.target.value)} style={inputStyle} type="password" />
+        <input
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          type="password"
+          placeholder="••••••••"
+          style={inputStyle}
+          autoComplete="new-password"
+        />
 
         <label style={{ display: 'block', opacity: 0.9, margin: '12px 0 6px' }}>Repeat password</label>
-        <input value={pw2} onChange={(e) => setPw2(e.target.value)} style={inputStyle} type="password" />
+        <input
+          value={password2}
+          onChange={(e) => setPassword2(e.target.value)}
+          type="password"
+          placeholder="••••••••"
+          style={inputStyle}
+          autoComplete="new-password"
+        />
 
-        {err && <div style={{ marginTop: 10, color: '#ffb4b4', fontSize: 13 }}>{err}</div>}
-        {ok && <div style={{ marginTop: 10, color: '#b7ffcf', fontSize: 13 }}>{ok}</div>}
+        {msg && <div style={{ marginTop: 10, color: '#ffb4b4', fontSize: 13 }}>{msg}</div>}
 
-        <button onClick={onUpdate} disabled={busy} style={{ ...btnStyle, marginTop: 14, background: BRAND }}>
+        <button onClick={onUpdate} disabled={busy} style={{ ...btnStyle, marginTop: 14, background: '#1F6FB2' }}>
           {busy ? '...' : 'Нууц үг шинэчлэх'}
         </button>
 
-        <button onClick={() => router.replace('/login')} style={{ ...btnStyle, marginTop: 10, background: 'transparent' }}>
+        <a href="/login?next=/chat" style={{ display: 'block', marginTop: 10, color: 'white', opacity: 0.85, fontSize: 13, textAlign: 'center' }}>
           Login руу буцах
-        </button>
+        </a>
       </div>
     </div>
   );
