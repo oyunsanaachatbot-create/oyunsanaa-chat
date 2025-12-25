@@ -28,11 +28,10 @@ import { LuHistory } from 'react-icons/lu';
 import { MdOutlineManageAccounts, MdOutlineSettings } from 'react-icons/md';
 
 import { supabase } from '@/lib/supabase/browser';
-import { usePathname } from 'next/navigation';
 
 interface SidebarContentProps extends PropsWithChildren {
   setApiKey?: (key: string) => void;
-  onClose?: () => void; // ✅ mobile drawer хаах
+  onClose?: () => void;
   [x: string]: any;
 }
 
@@ -40,9 +39,6 @@ type UserMini = { name: string; email: string } | null;
 
 export default function SidebarContent(props: SidebarContentProps) {
   const { setApiKey, onClose } = props;
-
-  const pathname = usePathname();
-  const isGuest = pathname?.startsWith('/guest');
 
   const textColor = useColorModeValue('navy.700', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
@@ -58,19 +54,12 @@ export default function SidebarContent(props: SidebarContentProps) {
   );
   const gray = useColorModeValue('gray.500', 'white');
 
-  // ✅ auth state
   const [user, setUser] = useState<UserMini>(null);
 
   useEffect(() => {
     let alive = true;
 
     const load = async () => {
-      // ✅ /guest дээр бол заавал Guest горим: нэр=Guest, email хоосон
-      if (isGuest) {
-        if (alive) setUser({ name: 'Guest', email: '' });
-        return;
-      }
-
       const { data } = await supabase.auth.getUser();
       const u = data.user;
 
@@ -88,7 +77,6 @@ export default function SidebarContent(props: SidebarContentProps) {
         (u.user_metadata?.name as string) ||
         fallback;
 
-      // ✅ яг Supabase-аас ирсэн нэр + mail-ийг хадгална
       setUser({ name, email });
     };
 
@@ -102,20 +90,20 @@ export default function SidebarContent(props: SidebarContentProps) {
       alive = false;
       sub.subscription.unsubscribe();
     };
-  }, [isGuest]);
+  }, []);
 
-  // ✅ Guest үед: /register руу явна
+  // ✅ Login байхгүй үед: Register руу
   const goRegister = () => {
     window.location.href = '/register?next=/chat';
   };
 
-  // ✅ Login хийсэн үед: logout -> /login руу явна (чи заасан яг тэр URL)
+  // ✅ Login хийсэн үед: Logout -> /login
   const doLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/login?next=/chat';
   };
 
-  const hasAuthUser = !!(user && user.name !== 'Guest' && user.email); // ✅ бодит login эсэх
+  const hasAuthUser = !!user; // ✅ одоо зөвхөн Supabase user байвал login гэж үзнэ
 
   return (
     <Flex
@@ -147,7 +135,7 @@ export default function SidebarContent(props: SidebarContentProps) {
       >
         <NextAvatar h="34px" w="34px" src={avatar4} me="10px" />
 
-        {/* ✅ Доор зөвхөн нэр */}
+        {/* ✅ Доор нэр */}
         <Text
           color={textColor}
           fontSize="xs"
@@ -194,7 +182,7 @@ export default function SidebarContent(props: SidebarContentProps) {
             boxShadow={shadow}
             bg={bgColor}
           >
-            {/* ✅ Dropdown дээр: нэр + email (guest үед email хоосон) */}
+            {/* ✅ Dropdown: нэр + email (loginгүй үед Not signed in) */}
             <Box mb="18px">
               <Text fontWeight="700" fontSize="sm" color={textColor}>
                 👋 Hey, {user?.name ?? 'sain uu'}
@@ -302,7 +290,7 @@ export default function SidebarContent(props: SidebarContentProps) {
           </MenuList>
         </Menu>
 
-        {/* ✅ Гол дүрэм: guest эсвэл login хийгээгүй -> Register, login хийсэн -> Logout */}
+        {/* ✅ Гол дүрэм: login байхгүй -> Register, login хийсэн -> Logout */}
         {hasAuthUser ? (
           <Button
             onClick={doLogout}
@@ -316,7 +304,7 @@ export default function SidebarContent(props: SidebarContentProps) {
             minW="34px"
             justifyContent={'center'}
             alignItems="center"
-            title="Log out"
+            title="Гарах"
           >
             <Icon as={FiLogOut} width="16px" height="16px" color="inherit" />
           </Button>
