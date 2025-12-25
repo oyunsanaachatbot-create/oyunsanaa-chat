@@ -32,7 +32,7 @@ import { usePathname } from 'next/navigation';
 
 interface SidebarContentProps extends PropsWithChildren {
   setApiKey?: (key: string) => void;
-  onClose?: () => void;
+  onClose?: () => void; // ✅ mobile drawer хаах
   [x: string]: any;
 }
 
@@ -40,6 +40,7 @@ type UserMini = { name: string; email: string } | null;
 
 export default function SidebarContent(props: SidebarContentProps) {
   const { setApiKey, onClose } = props;
+
   const pathname = usePathname();
   const isGuest = pathname?.startsWith('/guest');
 
@@ -57,14 +58,22 @@ export default function SidebarContent(props: SidebarContentProps) {
   );
   const gray = useColorModeValue('gray.500', 'white');
 
+  // ✅ auth state
   const [user, setUser] = useState<UserMini>(null);
 
   useEffect(() => {
     let alive = true;
 
     const load = async () => {
+      // ✅ /guest дээр бол заавал Guest горим: нэр=Guest, email хоосон
+      if (isGuest) {
+        if (alive) setUser({ name: 'Guest', email: '' });
+        return;
+      }
+
       const { data } = await supabase.auth.getUser();
       const u = data.user;
+
       if (!alive) return;
 
       if (!u) {
@@ -79,43 +88,74 @@ export default function SidebarContent(props: SidebarContentProps) {
         (u.user_metadata?.name as string) ||
         fallback;
 
+      // ✅ яг Supabase-аас ирсэн нэр + mail-ийг хадгална
       setUser({ name, email });
     };
 
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(load);
+
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      load();
+    });
 
     return () => {
       alive = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [isGuest]);
 
+  // ✅ Guest үед: /register руу явна
   const goRegister = () => {
     window.location.href = '/register?next=/chat';
   };
 
+  // ✅ Login хийсэн үед: logout -> /login руу явна (чи заасан яг тэр URL)
   const doLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/login?next=/chat';
   };
 
+  const hasAuthUser = !!(user && user.name !== 'Guest' && user.email); // ✅ бодит login эсэх
+
   return (
-    <Flex direction="column" height="100%" pt="20px" pb="26px" borderRadius="30px" maxW="285px" px="20px">
+    <Flex
+      direction="column"
+      height="100%"
+      pt="20px"
+      pb="26px"
+      borderRadius="30px"
+      maxW="285px"
+      px="20px"
+    >
       <Brand />
 
       <Stack direction="column" mb="auto" mt="8px">
-        <Box ps="0px">
+        <Box ps="0px" pe={{ md: '0px', '2xl': '0px' }}>
           <Links onClose={onClose} />
         </Box>
       </Stack>
 
-      <APIModal setApiKey={setApiKey} sidebar />
+      <APIModal setApiKey={setApiKey} sidebar={true} />
 
-      <Flex mt="8px" justifyContent="center" alignItems="center" boxShadow={shadowPillBar} borderRadius="30px" p="14px">
+      <Flex
+        mt="8px"
+        justifyContent="center"
+        alignItems="center"
+        boxShadow={shadowPillBar}
+        borderRadius="30px"
+        p="14px"
+      >
         <NextAvatar h="34px" w="34px" src={avatar4} me="10px" />
 
-        <Text color={textColor} fontSize="xs" fontWeight="600" me="10px" noOfLines={1} maxW="120px">
+        {/* ✅ Доор зөвхөн нэр */}
+        <Text
+          color={textColor}
+          fontSize="xs"
+          fontWeight="600"
+          me="10px"
+          noOfLines={1}
+          maxW="120px"
+        >
           {user?.name ?? 'Oyunsanaa'}
         </Text>
 
@@ -123,61 +163,147 @@ export default function SidebarContent(props: SidebarContentProps) {
           <MenuButton
             as={Button}
             variant="transparent"
+            aria-label=""
             border="1px solid"
             borderColor={borderColor}
             borderRadius="full"
             w="34px"
             h="34px"
-            p="0"
+            px="0px"
+            p="0px"
             minW="34px"
             me="10px"
+            justifyContent={'center'}
+            alignItems="center"
             color={iconColor}
           >
-            <Icon as={MdOutlineSettings} w="18px" h="18px" />
+            <Flex align="center" justifyContent="center">
+              <Icon as={MdOutlineSettings} width="18px" height="18px" color="inherit" />
+            </Flex>
           </MenuButton>
 
-          <MenuList ms="-20px" py="18px" ps="20px" pe="20px" w="246px" borderRadius="16px" boxShadow={shadow} bg={bgColor}>
+          <MenuList
+            ms="-20px"
+            py="18px"
+            ps="20px"
+            pe="20px"
+            w="246px"
+            borderRadius="16px"
+            transform="translate(-19px, -62px)!important"
+            border="0px"
+            boxShadow={shadow}
+            bg={bgColor}
+          >
+            {/* ✅ Dropdown дээр: нэр + email (guest үед email хоосон) */}
             <Box mb="18px">
               <Text fontWeight="700" fontSize="sm" color={textColor}>
                 👋 Hey, {user?.name ?? 'sain uu'}
               </Text>
-              <Text fontSize="xs" opacity={0.75} color={textColor}>
-                {user?.email ?? 'Not signed in'}
+              <Text fontSize="xs" opacity={0.75} color={textColor} mt="4px">
+                {user?.email ? user.email : 'Not signed in'}
               </Text>
             </Box>
 
-            {[['Profile Settings', MdOutlineManageAccounts],
-              ['History', LuHistory],
-              ['Usage', RoundedChart],
-              ['My Plan', IoMdPerson]].map(([label, IconCmp]: any) => (
-              <Box key={label} mb="20px">
-                <Flex align="center" cursor="not-allowed">
-                  <Icon as={IconCmp} w="24px" h="24px" color={gray} me="12px" opacity={0.4} />
-                  <Text color={gray} fontSize="sm" opacity={0.4}>{label}</Text>
-                  <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
-                    <Badge colorScheme="brand" borderRadius="25px" px="8px">PRO</Badge>
-                  </Link>
-                </Flex>
-              </Box>
-            ))}
+            {/* PRO хэсгүүд чинь хэвээр */}
+            <Box mb="30px">
+              <Flex align="center" w="100%" cursor={'not-allowed'}>
+                <Icon
+                  as={MdOutlineManageAccounts}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  me="12px"
+                  opacity={'0.4'}
+                />
+                <Text color={gray} fontWeight="500" fontSize="sm" opacity={'0.4'}>
+                  Profile Settings
+                </Text>
+                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                  <Badge
+                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
+                    colorScheme="brand"
+                    borderRadius="25px"
+                    color="brand.500"
+                    textTransform={'none'}
+                    letterSpacing="0px"
+                    px="8px"
+                  >
+                    PRO
+                  </Badge>
+                </Link>
+              </Flex>
+            </Box>
+
+            <Box mb="30px">
+              <Flex cursor={'not-allowed'} align="center">
+                <Icon as={LuHistory} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
+                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                  History
+                </Text>
+                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                  <Badge
+                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
+                    colorScheme="brand"
+                    borderRadius="25px"
+                    color="brand.500"
+                    textTransform={'none'}
+                    letterSpacing="0px"
+                    px="8px"
+                  >
+                    PRO
+                  </Badge>
+                </Link>
+              </Flex>
+            </Box>
+
+            <Box mb="30px">
+              <Flex cursor={'not-allowed'} align="center">
+                <Icon as={RoundedChart} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
+                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                  Usage
+                </Text>
+                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                  <Badge
+                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
+                    colorScheme="brand"
+                    borderRadius="25px"
+                    color="brand.500"
+                    textTransform={'none'}
+                    letterSpacing="0px"
+                    px="8px"
+                  >
+                    PRO
+                  </Badge>
+                </Link>
+              </Flex>
+            </Box>
+
+            <Box>
+              <Flex cursor={'not-allowed'} align="center">
+                <Icon as={IoMdPerson} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
+                <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
+                  My Plan
+                </Text>
+                <Link ms="auto" isExternal href="https://horizon-ui.com/ai-template">
+                  <Badge
+                    display={{ base: 'flex', lg: 'none', xl: 'flex' }}
+                    colorScheme="brand"
+                    borderRadius="25px"
+                    color="brand.500"
+                    textTransform={'none'}
+                    letterSpacing="0px"
+                    px="8px"
+                  >
+                    PRO
+                  </Badge>
+                </Link>
+              </Flex>
+            </Box>
           </MenuList>
         </Menu>
 
-        {isGuest ? (
-          <Button
-            onClick={goRegister}
-            variant="transparent"
-            border="1px solid"
-            borderColor={borderColor}
-            borderRadius="full"
-            w="34px"
-            h="34px"
-            minW="34px"
-            title="Бүртгүүлэх"
-          >
-            <Icon as={IoMdPerson} w="16px" h="16px" />
-          </Button>
-        ) : (
+        {/* ✅ Гол дүрэм: guest эсвэл login хийгээгүй -> Register, login хийсэн -> Logout */}
+        {hasAuthUser ? (
           <Button
             onClick={doLogout}
             variant="transparent"
@@ -186,12 +312,30 @@ export default function SidebarContent(props: SidebarContentProps) {
             borderRadius="full"
             w="34px"
             h="34px"
+            px="0px"
             minW="34px"
+            justifyContent={'center'}
+            alignItems="center"
             title="Log out"
-            isDisabled={!user}
-            opacity={!user ? 0.6 : 1}
           >
-            <Icon as={FiLogOut} w="16px" h="16px" />
+            <Icon as={FiLogOut} width="16px" height="16px" color="inherit" />
+          </Button>
+        ) : (
+          <Button
+            onClick={goRegister}
+            variant="transparent"
+            border="1px solid"
+            borderColor={borderColor}
+            borderRadius="full"
+            w="34px"
+            h="34px"
+            px="0px"
+            minW="34px"
+            justifyContent={'center'}
+            alignItems="center"
+            title="Бүртгүүлэх"
+          >
+            <Icon as={IoMdPerson} width="16px" height="16px" color="inherit" />
           </Button>
         )}
       </Flex>
