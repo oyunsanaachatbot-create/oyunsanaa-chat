@@ -1,10 +1,9 @@
-// app/(dashboard)/chat/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/browser';
-import ChatShell from '@/components/ChatShell';
+import ChatShell from '../../../components/ChatShell';
 
 export default function ChatPage() {
   const router = useRouter();
