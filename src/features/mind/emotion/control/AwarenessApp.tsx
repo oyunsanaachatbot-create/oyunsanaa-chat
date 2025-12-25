@@ -7,6 +7,7 @@ import {
   Box,
   Flex,
   HStack,
+  VStack,
   Text,
   Heading,
   Icon,
@@ -14,11 +15,10 @@ import {
   AccordionItem,
   AccordionButton,
   AccordionPanel,
-  useBreakpointValue,
   Divider,
   Tag,
   Button,
-  VStack,
+  useBreakpointValue,
 } from "@chakra-ui/react";
 import { MessageCircle, Sparkles } from "lucide-react";
 
@@ -33,9 +33,9 @@ const SECTIONS: Section[] = [
     id: "what",
     title: "Мэдрэхүй гэж юу вэ?",
     paragraphs: [
-      "Мэдрэхүй гэдэг нь бие дотор болж буй мэдрэмжүүдээ (амьсгал, зүрхний цохилт, булчингийн чангарал, хоолой/гэдэсний мэдрэмж гэх мэт) анзаарах чадвар.",
-      "Энэ чадвар өндөр байх тусам “би одоо яагаад ингэж авирлаад байна?” гэдгээ хурдан ойлгодог — өөрийгөө буруутгах биш, өөрийгөө уншиж сурна.",
-      "Мэдрэхүй бол сэтгэлзүйн “дотоод компас”. Анзаарах → нэрлэх → сонсох → тайвшруулах гэсэн дарааллын эхний алхам нь энэ.",
+      "Мэдрэхүй гэдэг нь бие дотор болон сэтгэл дотор болж буй дохиог анзаарах чадвар юм. (амьсгал, зүрхний цохилт, булчин чангарах, хоолой зангирах, гэдэс базлах гэх мэт).",
+      "Энэ чадвар нэмэгдэх тусам чи өөрийнхөө мэдрэмжийг “таах” биш, “унших” чадвартай болдог. Тэгэхээр сэтгэл хөдөлсөн үедээ өөрийгөө буруутгах нь багасна.",
+      "Анзаарах → нэрлэх → ойлгох → тайвшруулах гэсэн дарааллын эхний шат нь мэдрэхүй.",
     ],
   },
   {
@@ -43,54 +43,67 @@ const SECTIONS: Section[] = [
     title: "Ямар ямар мэдрэмжүүд байдаг вэ?",
     paragraphs: [
       "Суурь мэдрэмжүүд: баяр, гуниг, уур, айдас, жигшил, гайхшрал.",
-      "Нарийн, холимог мэдрэмжүүд: түгшүүр, гомдол, ичгүүр, гэмшил, атаархал, ганцаардал, сэтгэл дундуур байдал гэх мэт.",
-      "Нэг дор 2–3 мэдрэмж зэрэг байх нь хэвийн. Жишээ нь: “ууртай мөртлөө айж байна”, “баяртай мөртлөө түгшиж байна”.",
+      "Нарийн (холимог) мэдрэмжүүд: түгшүүр, гомдол, ичгүүр, гэмшил, атаархал, ганцаардал, сэтгэл дундуур байдал гэх мэт.",
+      "Нэг дор 2–3 мэдрэмж зэрэг оршиж болно. Жишээ нь: “ууртай мөртлөө айж байна”, “тайван байхыг хүсэж мөртлөө түгшиж байна”. Энэ бол хэвийн.",
     ],
   },
   {
     id: "understand",
     title: "Юуг ойлгох ёстой вэ?",
     paragraphs: [
-      "Мэдрэмж бол мэдээлэл — “би муу хүн” гэсэн дүгнэлт биш. Энэ нь: “Надад нэг хэрэгцээ байна” гэсэн дохио.",
-      "Хэрэгцээ гэдэг нь: аюулгүй байдал, хүндлэл, тайван орчин, амралт, дэмжлэг, ойр байдал, хил хязгаар, шударга байдал гэх мэт.",
-      "Тайлбар (таамаг) ба баримтыг салгаж сурах нь чамайг тайвшруулна. Баримт: “тэр хариу бичээгүй.” Тайлбар: “намайг тоохоо больжээ.”",
+      "Мэдрэмж бол мэдээлэл — шийтгэл биш. “Би муу хүн” гэсэн дүгнэлт биш, “надад хэрэгцээ байна” гэсэн дохио.",
+      "Ихэнхдээ мэдрэмжийн цаана хэрэгцээ байдаг: аюулгүй байдал, хүндлэл, тайван орчин, амралт, дэмжлэг, ойр байдал, шударга байдал, хил хязгаар гэх мэт.",
+      "Баримт ба тайлбарыг ялга: Баримт — “тэр хариу бичээгүй.” Тайлбар — “намайг тоохоо больжээ.” Энэ 2-ыг салгаж чадвал сэтгэлд дарамт багасдаг.",
     ],
   },
   {
     id: "skills",
     title: "Юуг эзэмших сурах вэ?",
     paragraphs: [
-      "1) Анзаарах: “Биед яг хаана юу мэдрэгдэж байна?” (цээж, хоолой, гэдэс, мөр, эрүү гэх мэт)",
-      "2) Нэрлэх: “Энэ мэдрэмжийн нэр нь юу вэ?” (уур, айдас, гуниг, түгшүүр…)",
+      "1) Биеэ скан хийх: “Биед яг хаана юу мэдрэгдэж байна?” (цээж, хоолой, гэдэс, мөр, эрүү, гар гэх мэт).",
+      "2) Нэрлэх: “Энэ мэдрэмжийн нэр нь юу вэ?” (уур, айдас, гуниг, түгшүүр…). Нэрлэж чадвал мэдрэмж “харанхуй манан” биш болдог.",
       "3) Зөөлөн асуух: “Энэ мэдрэмж надад юуг хэлэх гээд байна?” “Би яг юу хэрэгтэй байгаа вэ?”",
-      "4) Бага алхам: ус уух, 10 удаа удаан амьсгалах, 3 минут алхах, бодлоо бичих — жижиг зүйлс системийг тайвшруулдаг.",
+      "4) Жижиг алхам: ус уух, 10 удаа удаан амьсгалах, 3 минут алхах, бодлоо бичих — жижиг үйлдэл мэдрэлийн системийг тайвшруулдаг.",
     ],
   },
   {
     id: "habit",
     title: "Хэрхэн дадал болгох вэ?",
     paragraphs: [
-      "Өдөрт 2 минут: “Одоо би юу мэдэрч байна?” гэдэг асуултыг 1–2 удаа өөртөө өг.",
+      "Өдөрт 2 минут: “Одоо би юу мэдэрч байна?” гэж 1–2 удаа өөрөөсөө асуу. Хариу нь төгс байх албагүй, зүгээр л анзаарах хэрэгтэй.",
       "Бичих загвар: “Би … мэдэрч байна. Учир нь … хэрэгтэй байна. Одоо би … гэж жижиг алхам хийнэ.”",
-      "Сэтгэл хүчтэй үед шийдвэрийг хойшлуул: эхлээд тайвшир → дараа нь хариу үйлдэл. Энэ бол өөрийгөө хамгаалах ухаалаг арга.",
+      "Сэтгэл хүчтэй үед шийдвэр гаргахыг түр азна: эхлээд тайвшир → дараа нь хариу үйлдэл. Энэ бол өөрийгөө хамгаалах хамгийн ухаалаг арга.",
     ],
   },
 ];
 
 export default function AwarenessApp() {
-  // ✅ Илүү гэгээлэг, brand tint-тэй day-friendly palette
-  // Brand: #1F6FB2 (31,111,178)
+  /**
+   * ✅ БАТЛАГДСАН “OY BLUE-GLASS” СТАНДАРТ ЗАГВАР
+   * Суурь өнгө: #3E6F96
+   * Зорилго: day/night үл хамааран “цагаан” болохгүй, үргэлж цэнхэр glass хэвээр.
+   */
+
+  // base: #3E6F96 (62,111,150)
   const pageBg =
-    "linear-gradient(180deg, rgba(31,111,178,0.10) 0%, rgba(31,111,178,0.18) 55%, rgba(255,255,255,0.00) 100%)";
+    "radial-gradient(1200px 600px at 30% -10%, rgba(62,111,150,0.55) 0%, rgba(62,111,150,0.22) 45%, rgba(10,24,36,0.10) 100%), linear-gradient(180deg, rgba(62,111,150,0.32) 0%, rgba(10,24,36,0.28) 100%)";
 
-  const shellBg = "rgba(255,255,255,0.70)";
-  const shellBorder = "rgba(31,111,178,0.22)";
+  // “Shell” = гол контейнер (glass)
+  const shellBg = "rgba(22, 45, 62, 0.42)"; // өмнөхөөс цайвар
+  const shellBorder = "rgba(255,255,255,0.14)";
 
-  const cardBg = "rgba(255,255,255,0.78)";
-  const cardBorder = "rgba(31,111,178,0.18)";
+  // Cards (accordion items) — цагаан карт БИШ, glass card
+  const cardBg = "rgba(255,255,255,0.10)";
+  const cardBorder = "rgba(255,255,255,0.16)";
 
-  const textMain = "#0F2A44";
-  const textSub = "rgba(15,42,68,0.72)";
+  // Text
+  const textMain = "rgba(255,255,255,0.92)";
+  const textSub = "rgba(255,255,255,0.72)";
+
+  // Accent
+  const accent = "rgba(62,111,150,0.95)";
+  const pillBg = "rgba(255,255,255,0.10)";
+  const pillBorder = "rgba(255,255,255,0.14)";
 
   const radius = useBreakpointValue({ base: "18px", md: "24px" });
   const pad = useBreakpointValue({ base: 5, md: 7 });
@@ -110,8 +123,9 @@ export default function AwarenessApp() {
           border="1px solid"
           borderColor={shellBorder}
           borderRadius={radius}
-          boxShadow="0 25px 80px rgba(0,0,0,0.15)"
+          boxShadow="0 25px 80px rgba(0,0,0,0.35)"
           overflow="hidden"
+          backdropFilter="blur(10px)"
         >
           {/* Top row (pills + chat) */}
           <Flex
@@ -127,10 +141,11 @@ export default function AwarenessApp() {
                 px={3}
                 py={1.5}
                 borderRadius="999px"
-                bg="rgba(31,111,178,0.10)"
-                border="1px solid rgba(31,111,178,0.20)"
+                bg={pillBg}
+                border="1px solid"
+                borderColor={pillBorder}
               >
-                <Icon as={Sparkles} boxSize={4} color="rgba(31,111,178,0.95)" />
+                <Icon as={Sparkles} boxSize={4} color={accent} />
                 <Text fontSize="sm" color={textMain} fontWeight="700">
                   Миний сэтгэлзүй
                 </Text>
@@ -141,10 +156,16 @@ export default function AwarenessApp() {
                 px={3}
                 py={1.5}
                 borderRadius="999px"
-                bg="rgba(31,111,178,0.08)"
-                border="1px solid rgba(31,111,178,0.18)"
+                bg={pillBg}
+                border="1px solid"
+                borderColor={pillBorder}
               >
-                <Text fontSize="sm" color={textMain} fontWeight="700" textTransform="uppercase">
+                <Text
+                  fontSize="sm"
+                  color={textMain}
+                  fontWeight="700"
+                  textTransform="uppercase"
+                >
                   сэтгэл хөдлөл
                 </Text>
               </HStack>
@@ -155,10 +176,11 @@ export default function AwarenessApp() {
               href="/dashboard/chat"
               size="sm"
               leftIcon={<Icon as={MessageCircle} boxSize={4} />}
-              bg="rgba(31,111,178,0.10)"
-              border="1px solid rgba(31,111,178,0.22)"
+              bg={pillBg}
+              border="1px solid"
+              borderColor={pillBorder}
               color={textMain}
-              _hover={{ bg: "rgba(31,111,178,0.14)" }}
+              _hover={{ bg: "rgba(255,255,255,0.14)" }}
               borderRadius="999px"
               flexShrink={0}
             >
@@ -174,17 +196,17 @@ export default function AwarenessApp() {
               lineHeight={{ base: "1.15", md: "1.1" }}
               color={textMain}
               letterSpacing="-0.02em"
+              whiteSpace="pre-line"
             >
               Сэтгэл дотроо юу болж
-              <br />
-              байгааг мэдэрч суръя
+              {"\n"}байгааг мэдэрч суръя
             </Heading>
 
             <Text mt={3} fontSize={{ base: "sm", md: "md" }} color={textSub} maxW="74ch">
               Өөрийн дотоод хөдөлгөөнийг ажиглах, нэрлэх, ойлгох дадлыг эндээс эхлүүлнэ.
             </Text>
 
-            <Divider my={{ base: 5, md: 6 }} borderColor="rgba(31,111,178,0.16)" />
+            <Divider my={{ base: 5, md: 6 }} borderColor="rgba(255,255,255,0.10)" />
 
             {/* Accordion */}
             <Accordion allowMultiple display="grid" gap={3}>
@@ -201,14 +223,14 @@ export default function AwarenessApp() {
                     <AccordionButton
                       px={pad}
                       py={{ base: 4, md: 5 }}
-                      _hover={{ bg: "rgba(31,111,178,0.06)" }}
+                      _hover={{ bg: "rgba(255,255,255,0.08)" }}
                     >
                       <HStack w="full" spacing={3} align="center">
                         <Tag
                           size="sm"
                           borderRadius="999px"
-                          bg="rgba(31,111,178,0.10)"
-                          border="1px solid rgba(31,111,178,0.18)"
+                          bg="rgba(255,255,255,0.10)"
+                          border="1px solid rgba(255,255,255,0.14)"
                           color={textMain}
                           fontWeight="800"
                         >
@@ -227,15 +249,15 @@ export default function AwarenessApp() {
 
                         {/* screenshot шиг баруун талд ✓ */}
                         <Box
-                          w="26px"
-                          h="26px"
+                          w="28px"
+                          h="28px"
                           borderRadius="999px"
                           display="grid"
                           placeItems="center"
-                          bg="rgba(31,111,178,0.10)"
-                          border="1px solid rgba(31,111,178,0.18)"
+                          bg="rgba(255,255,255,0.10)"
+                          border="1px solid rgba(255,255,255,0.14)"
                         >
-                          <Text fontSize="sm" color="rgba(31,111,178,0.95)" fontWeight="900">
+                          <Text fontSize="sm" color={textMain} fontWeight="900">
                             ✓
                           </Text>
                         </Box>
@@ -261,7 +283,7 @@ export default function AwarenessApp() {
               ))}
             </Accordion>
 
-            <Text mt={6} fontSize="xs" color="rgba(15,42,68,0.45)">
+            <Text mt={6} fontSize="xs" color="rgba(255,255,255,0.50)">
               oyunsanaa · Awareness
             </Text>
           </Box>
