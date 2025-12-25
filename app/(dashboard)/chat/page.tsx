@@ -1,61 +1,82 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/browser';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase/browser';
 
 export default function ChatPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    let alive = true;
 
     const run = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) console.error('getSession error', error);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
 
-        if (!mounted) return;
-        setAuthed(!!data.session);
-      } catch (e) {
-        console.error('session check failed', e);
-        if (!mounted) return;
-        setAuthed(false);
-      } finally {
-        if (!mounted) return;
-        setLoading(false);
+      if (!alive) return;
+
+      if (!session) {
+        router.replace('/login?next=/chat');
+        return;
       }
+
+      // user email
+      const { data: userData } = await supabase.auth.getUser();
+      if (!alive) return;
+      setEmail(userData?.user?.email ?? null);
+
+      setChecking(false);
     };
 
     run();
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthed(!!session);
-      setLoading(false);
-    });
-
     return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
+      alive = false;
     };
-  }, []);
+  }, [router]);
 
-  if (loading) {
-    return <div style={{ padding: 24 }}>Checking session...</div>;
+  const logout = async () => {
+    await supabase.auth.signOut();
+    router.replace('/login');
+  };
+
+  if (checking) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2>Chat UI</h2>
+        <div>Checking session...</div>
+      </div>
+    );
   }
 
-  if (!authed) {
-    router.replace('/login?next=/chat');
-    return <div style={{ padding: 24 }}>Redirecting to login...</div>;
-  }
-
-  // ✅ эндээс доош чинь жинхэнэ Chat UI чинь render-лэнэ
   return (
     <div style={{ padding: 24 }}>
-      <h1>Chat UI</h1>
-      {/* TODO: энд чинь жинхэнэ чат компонент чинь байх ёстой */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 800 }}>Chat</div>
+          <div style={{ opacity: 0.7, fontSize: 13 }}>{email ?? 'unknown user'}</div>
+        </div>
+
+        <button
+          onClick={logout}
+          style={{
+            padding: '10px 14px',
+            borderRadius: 10,
+            border: '1px solid rgba(0,0,0,0.15)',
+            cursor: 'pointer',
+          }}
+        >
+          Logout
+        </button>
+      </div>
+
+      <div style={{ marginTop: 16, padding: 14, border: '1px dashed rgba(0,0,0,0.25)', borderRadius: 12 }}>
+        Одоо бол хоосон биш харагдана ✅
+        <br />
+        Дараагийн алхам: энд чинь жинхэнэ Chat UI-г чинь холбоно.
+      </div>
     </div>
   );
 }
