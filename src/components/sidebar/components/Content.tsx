@@ -26,7 +26,7 @@ import { IoMdPerson } from 'react-icons/io';
 import { FiLogOut } from 'react-icons/fi';
 import { LuHistory } from 'react-icons/lu';
 import { MdOutlineManageAccounts, MdOutlineSettings } from 'react-icons/md';
-import { useRouter } from 'next/navigation';
+
 import { supabase } from '@/lib/supabase/browser';
 
 interface SidebarContentProps extends PropsWithChildren {
@@ -39,7 +39,6 @@ type UserMini = { name: string; email: string } | null;
 
 export default function SidebarContent(props: SidebarContentProps) {
   const { setApiKey, onClose } = props;
-  const router = useRouter();
 
   const textColor = useColorModeValue('navy.700', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.300');
@@ -55,7 +54,7 @@ export default function SidebarContent(props: SidebarContentProps) {
   );
   const gray = useColorModeValue('gray.500', 'white');
 
-  // ✅ user state (login хийсэн эсэх + нэр + mail)
+  // ✅ auth state
   const [user, setUser] = useState<UserMini>(null);
 
   useEffect(() => {
@@ -73,11 +72,11 @@ export default function SidebarContent(props: SidebarContentProps) {
       }
 
       const email = u.email ?? '';
-      const fallbackName = (email ? email.split('@')[0] : 'Oyunsanaa') || 'Oyunsanaa';
+      const fallback = email ? email.split('@')[0] : 'Oyunsanaa';
       const name =
         (u.user_metadata?.full_name as string) ||
         (u.user_metadata?.name as string) ||
-        fallbackName;
+        fallback;
 
       setUser({ name, email });
     };
@@ -94,16 +93,15 @@ export default function SidebarContent(props: SidebarContentProps) {
     };
   }, []);
 
-  // ✅ Logout-ийн одоогийн ажиллаж байсан чиглэлийг эвдэхгүй:
-  // signOut хийгээд login руу буцаана (чи “шууд нэвтрэх тсонх руу очдог” гэж хэлсэн)
-  const onLogout = async () => {
-    await supabase.auth.signOut();
-    router.replace('/login?next=/chat');
+  // ✅ Guest үед: бүртгүүлэх тусдаа UI (/signup)
+  const goSignup = () => {
+    window.location.href = '/signup?next=/chat';
   };
 
-  // ✅ Login хийгдээгүй үед: logout icon дээр дарвал register руу орно
-  const onRegister = () => {
-    router.replace('/register?next=/chat');
+  // ✅ Login хийсэн үед: logout -> login page руу (чи заасан яг тэр URL)
+  const doLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = 'https://chat.oyunsanaa.com/login?next=/chat';
   };
 
   return (
@@ -125,7 +123,7 @@ export default function SidebarContent(props: SidebarContentProps) {
         </Box>
       </Stack>
 
-      {/* ✅ PRO карт (SidebarCard) устгасан */}
+      {/* ✅ энэ modal-ыг одоохондоо оролдохгүй */}
       <APIModal setApiKey={setApiKey} sidebar={true} />
 
       <Flex
@@ -138,8 +136,15 @@ export default function SidebarContent(props: SidebarContentProps) {
       >
         <NextAvatar h="34px" w="34px" src={avatar4} me="10px" />
 
-        {/* ✅ Pill дээр зөвхөн НЭР */}
-        <Text color={textColor} fontSize="xs" fontWeight="600" me="10px" noOfLines={1} maxW="120px">
+        {/* ✅ Доор зөвхөн нэр (mail энд харагдахгүй) */}
+        <Text
+          color={textColor}
+          fontSize="xs"
+          fontWeight="600"
+          me="10px"
+          noOfLines={1}
+          maxW="120px"
+        >
           {user?.name ?? 'Oyunsanaa'}
         </Text>
 
@@ -178,7 +183,7 @@ export default function SidebarContent(props: SidebarContentProps) {
             boxShadow={shadow}
             bg={bgColor}
           >
-            {/* ✅ Dropdown дээр: Hey + mail (mail зөвхөн энд харагдана) */}
+            {/* ✅ Dropdown дээр: Hey + email (чи хүссэнээрээ) */}
             <Box mb="18px">
               <Text fontWeight="700" fontSize="sm" color={textColor}>
                 👋 Hey, {user?.name ?? 'sain uu'}
@@ -219,7 +224,14 @@ export default function SidebarContent(props: SidebarContentProps) {
 
             <Box mb="30px">
               <Flex cursor={'not-allowed'} align="center">
-                <Icon as={LuHistory} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
+                <Icon
+                  as={LuHistory}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
                 <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
                   History
                 </Text>
@@ -241,7 +253,14 @@ export default function SidebarContent(props: SidebarContentProps) {
 
             <Box mb="30px">
               <Flex cursor={'not-allowed'} align="center">
-                <Icon as={RoundedChart} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
+                <Icon
+                  as={RoundedChart}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
                 <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
                   Usage
                 </Text>
@@ -263,7 +282,14 @@ export default function SidebarContent(props: SidebarContentProps) {
 
             <Box>
               <Flex cursor={'not-allowed'} align="center">
-                <Icon as={IoMdPerson} width="24px" height="24px" color={gray} opacity="0.4" me="12px" />
+                <Icon
+                  as={IoMdPerson}
+                  width="24px"
+                  height="24px"
+                  color={gray}
+                  opacity="0.4"
+                  me="12px"
+                />
                 <Text color={gray} fontWeight="500" fontSize="sm" opacity="0.4">
                   My Plan
                 </Text>
@@ -285,12 +311,10 @@ export default function SidebarContent(props: SidebarContentProps) {
           </MenuList>
         </Menu>
 
-        {/* ✅ ЭНД Л гол өөрчлөлт:
-            - guest үед: бүртгүүлэх (register руу)
-            - login үед: logout (өмнөх шигээ login руу) */}
+        {/* ✅ Гол хүсэлт: guest үед Бүртгүүлэх, login үед Log out */}
         {user ? (
           <Button
-            onClick={onLogout}
+            onClick={doLogout}
             variant="transparent"
             border="1px solid"
             borderColor={borderColor}
@@ -307,7 +331,7 @@ export default function SidebarContent(props: SidebarContentProps) {
           </Button>
         ) : (
           <Button
-            onClick={onRegister}
+            onClick={goSignup}
             variant="transparent"
             border="1px solid"
             borderColor={borderColor}
