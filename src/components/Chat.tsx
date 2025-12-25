@@ -192,24 +192,31 @@ export default function Chat() {
         .limit(1)
         .maybeSingle();
 
-      let cid = lastChat?.id as string | undefined;
+    let cid: string | null = lastChat?.id ?? null;
 
-      if (!cid) {
-        // байхгүй бол шинээр үүсгэнэ
-        const { data: newChat, error: chatErr } = await supabase
-          .from('chats')
-          .insert({ user_id: user.id, title: 'New chat' })
-          .select('id')
-          .single();
+     if (!cid) {
+  const { data: newChat, error: chatErr } = await supabase
+    .from('chats')
+    .insert({ user_id: user.id, title: 'New chat' })
+    .select('id')
+    .single();
 
-        if (chatErr || !newChat?.id) {
-          setMessages([{ id: crypto.randomUUID(), role: 'assistant', content: `Chat үүсгэж чадсангүй: ${chatErr?.message || ''}` }]);
-          return;
-        }
-        cid = newChat.id;
-      }
+  if (chatErr || !newChat?.id) {
+    setMessages([
+      {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `Chat үүсгэж чадсангүй: ${chatErr?.message || ''}`,
+      },
+    ]);
+    return;
+  }
 
-      setChatId(cid);
+  cid = newChat.id;
+}
+
+// 🔥 ЭНД cid 100% string болсон
+setChatId(cid);
 
       // history ачаална
       const { data: rows } = await supabase
