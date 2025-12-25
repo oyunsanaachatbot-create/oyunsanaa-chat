@@ -1,17 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/browser';
+
+// ✅ чиний жинхэнэ CHAT UI
 import Chat from '@/components/Chat';
 
 export default function ChatPage() {
   const router = useRouter();
-  const pathname = usePathname();
   const [checking, setChecking] = useState(true);
-
-  // ✅ /guest дээр бол login шаардахгүй
-  const isGuest = pathname === '/guest';
 
   useEffect(() => {
     let alive = true;
@@ -22,9 +20,9 @@ export default function ChatPage() {
 
       if (!alive) return;
 
-      // ✅ зөвхөн /chat дээр л login шаардана
-      if (!user && !isGuest) {
-        router.replace('/login?next=/chat'); // ⚠️ /(auth) битгий хэрэглэ
+      // ✅ зөв: /login (route group URL дээр гардаггүй)
+      if (!user) {
+        router.replace('/login?next=/chat');
         return;
       }
 
@@ -35,9 +33,8 @@ export default function ChatPage() {
     return () => {
       alive = false;
     };
-  }, [router, isGuest]);
+  }, [router]);
 
   if (checking) return <div style={{ padding: 24 }}>Checking session...</div>;
-
   return <Chat />;
 }
