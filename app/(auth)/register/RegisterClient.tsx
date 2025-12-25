@@ -128,6 +128,11 @@ export default function RegisterClient() {
   const signUpWithGoogle = async () => {
     setBusy(true);
     setErr(null);
-    try {
-      // Google-р ороод буцаж ирэхэд нэрээ алдахгүйн тулд түр хадгална
-      if (name
+   try {
+  // Google-р орж буцах үед нэрээ алдахгүй тулд түр хадгална
+  if (name) {
+    // энд логик чинь байвал байг
+  }
+} catch (e) {
+  console.error(e);
+}
