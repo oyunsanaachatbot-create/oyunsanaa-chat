@@ -1,22 +1,134 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import styles from "./ebook.module.css";
 
-const BRAND = "#1F6FB2";
-const STORAGE_KEY = "oyun_ebook_notes_notes_v1";
-
-type Note = {
+type Cat = {
   id: string;
   title: string;
-  content: string;
-  createdAt: number;
-  includeInBook: boolean;
-  imageUrl?: string;
-  imageCaption?: string;
+  sub: string;
+  img: string;
+  href: string;
+  kind: "section" | "extras" | "preview";
 };
 
+const BRAND = "#1F6FB2";
+
+/** SECTION ids нь Preview дээрх SECTION_ORDER-той 1:1 таарах ёстой */
+const SECTION_ORDER = [
+  "world",
+  "memories",
+  "notes",
+  "happy",
+  "letters",
+  "difficult",
+  "wisdom",
+  "complaints",
+  "creatives",
+  "personals",
+] as const;
+
+const CATS: Cat[] = [
+  {
+    id: "world",
+    title: "Миний ертөнц",
+    sub: "Миний бодол, дотоод ертөнц",
+    img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/world",
+    kind: "section",
+  },
+  {
+    id: "memories",
+    title: "Амьдралын дурсамж",
+    sub: "Эргэн дурсах түүх",
+    img: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/memories",
+    kind: "section",
+  },
+  {
+    id: "notes",
+    title: "Тэмдэглэл",
+    sub: "Өдөр тутмын бодол, санаа",
+    img: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/notes",
+    kind: "section",
+  },
+  {
+    id: "happy",
+    title: "Талархал · Баярт мөч",
+    sub: "Сэтгэл дулаацуулсан агшнууд",
+    img: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/happy",
+    kind: "section",
+  },
+  {
+    id: "letters",
+    title: "Захидал",
+    sub: "Хайртай хүмүүстээ бичих үгс",
+    img: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/letters",
+    kind: "section",
+  },
+  {
+    id: "difficult",
+    title: "Хүнд хэцүү үе",
+    sub: "Бэрхшээл, сорилт, даван туулах",
+    img: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/difficult",
+    kind: "section",
+  },
+  {
+    id: "wisdom",
+    title: "Ухаарал · Сургамж",
+    sub: "Амьдралаас ойлгосон зүйлс",
+    img: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/wisdom",
+    kind: "section",
+  },
+  {
+    id: "complaints",
+    title: "Гомдол ба харуусал",
+    sub: "Сэтгэлээ илэн далангүй бичих орон зай",
+    img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/complaints",
+    kind: "section",
+  },
+  {
+    id: "creatives",
+    title: "Миний уран бүтээл",
+    sub: "Шүлэг, өгүүллэг, санаа, бүтээл",
+    img: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/creatives",
+    kind: "section",
+  },
+  {
+    id: "personals",
+    title: "Миний булан",
+    sub: "Ямар ч сэдвээр чөлөөтэй бичих хэсэг",
+    img: "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/personals",
+    kind: "section",
+  },
+  {
+    id: "extras",
+    title: "Номын бусад хэсэг",
+    sub: "Тусгай бүлэг, нэмэлт хуудас",
+    img: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/extras",
+    kind: "extras",
+  },
+  {
+    id: "preview",
+    title: "Эх бэлтгэл",
+    sub: "Ном хэрхэн харагдаж байгааг харах",
+    img: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&h=600&fit=crop",
+    href: "/mind/ebooks/preview",
+    kind: "preview",
+  },
+];
+
+/* ================= HELPERS ================= */
 function safeJsonParse<T>(s: string | null, fallback: T): T {
   try {
     const v = JSON.parse(s || "");
@@ -26,251 +138,190 @@ function safeJsonParse<T>(s: string | null, fallback: T): T {
   }
 }
 
-function uid() {
-  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+function escEmpty(s: any) {
+  return s && String(s).trim() ? String(s) : " ";
 }
 
-export default function NotesApp() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [includeInBook, setIncludeInBook] = useState(true);
+function splitTextByHeightPreserveNewlines({
+  text,
+  measureEl,
+  maxHeight,
+}: {
+  text: string;
+  measureEl: HTMLDivElement;
+  maxHeight: number;
+}) {
+  const raw = String(text || "").replace(/\r\n/g, "\n");
+  if (!raw.trim()) return [""];
 
-  // load
+  const prefix =
+    `<div style="font-size:12px;line-height:1.9;white-space:pre-wrap;word-break:break-word;color:#3f3128;">`;
+  const suffix = `</div>`;
+
+  const setAndMeasure = (s: string) => {
+    measureEl.innerHTML = `${prefix}${escEmpty(s).replace(/\n/g, "<br/>")}${suffix}`;
+    return measureEl.scrollHeight;
+  };
+
+  const parts: string[] = [];
+  let start = 0;
+
+  while (start < raw.length) {
+    let lo = 1;
+    let hi = Math.min(6000, raw.length - start);
+    let best = 1;
+
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const candidate = raw.slice(start, start + mid);
+      if (setAndMeasure(candidate) <= maxHeight) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+
+    let cut = start + best;
+    const windowStart = Math.max(start, cut - 80);
+    const window = raw.slice(windowStart, cut);
+    const lastWs = Math.max(
+      window.lastIndexOf(" "),
+      window.lastIndexOf("\n"),
+      window.lastIndexOf("\t")
+    );
+    if (lastWs > -1 && windowStart + lastWs > start + 12) {
+      cut = windowStart + lastWs + 1;
+    }
+
+    parts.push(raw.slice(start, cut));
+    start = cut;
+  }
+
+  return parts.length ? parts : [raw];
+}
+
+function computePagesForSection(notes: any[], measureEl: HTMLDivElement): number {
+  const TEXT_MAX = 520;
+  let count = 0;
+
+  const list = (notes || []).filter((n) => n?.includeInBook !== false);
+
+  list.forEach((n) => {
+    const title = n?.title && n.title !== "(гарчиггүй)" ? String(n.title) : "";
+    const hasImg = !!n?.imageUrl;
+    const hasCaption = !!(n?.imageCaption && String(n.imageCaption).trim());
+
+    const firstTextMax =
+      TEXT_MAX - (hasImg ? 250 : 0) - (hasCaption ? 30 : 0) - (title ? 30 : 0) - 10;
+
+    const content = String(n?.content || "");
+
+    const firstParts = splitTextByHeightPreserveNewlines({
+      text: content,
+      measureEl,
+      maxHeight: Math.max(200, firstTextMax),
+    });
+
+    if (firstParts.length <= 1) {
+      count += 1;
+      return;
+    }
+
+    const firstPiece = firstParts[0];
+    const rest = content.slice(firstPiece.length);
+
+    const restParts = splitTextByHeightPreserveNewlines({
+      text: rest,
+      measureEl,
+      maxHeight: TEXT_MAX,
+    });
+
+    const totalPages = 1 + restParts.filter((x) => x !== "").length;
+    count += totalPages;
+  });
+
+  return count;
+}
+
+export default function EbookHomeApp() {
+  const [notesBySection, setNotesBySection] = useState<Record<string, any[]>>({});
+  const measureRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const list = safeJsonParse<Note[]>(window.localStorage.getItem(STORAGE_KEY), []);
-    setNotes(Array.isArray(list) ? list : []);
+    const obj: Record<string, any[]> = {};
+    SECTION_ORDER.forEach((sid) => {
+      obj[sid] = safeJsonParse<any[]>(localStorage.getItem(`oyun_ebook_notes_${sid}_v1`), []);
+    });
+    setNotesBySection(obj);
   }, []);
 
-  // persist
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-  }, [notes]);
+  const pageCountBySection = useMemo(() => {
+    const out: Record<string, number> = {};
+    if (!measureRef.current) return out;
 
-  const sorted = useMemo(() => {
-    return [...notes].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [notes]);
+    SECTION_ORDER.forEach((sid) => {
+      out[sid] = computePagesForSection(notesBySection[sid] || [], measureRef.current!);
+    });
 
-  const canSave = content.trim().length > 0;
+    out["extras"] = 0;
+    out["preview"] = 0;
 
-  function addNote() {
-    if (!canSave) return;
-
-    const n: Note = {
-      id: uid(),
-      title: title.trim() || "(гарчиггүй)",
-      content: content.trim(),
-      createdAt: Date.now(),
-      includeInBook,
-    };
-
-    setNotes((prev) => [n, ...prev]);
-    setTitle("");
-    setContent("");
-    setIncludeInBook(true);
-  }
-
-  function removeNote(id: string) {
-    setNotes((prev) => prev.filter((n) => n.id !== id));
-  }
-
-  function toggleInclude(id: string) {
-    setNotes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, includeInBook: !n.includeInBook } : n))
-    );
-  }
+    return out;
+  }, [notesBySection]);
 
   return (
     <main className={styles.ebookBody} style={{ ["--brand" as any]: BRAND }}>
       <div className={styles.container}>
-        {/* topbar */}
         <div className={styles.topbar}>
-          <Link href="/mind/ebooks" className={styles.pill}>
-            ← Буцах
+          {/* ✅ "/" биш. Horizon дээр chat-д буцаах зөв замаа энд тавь */}
+          <Link href="/dashboard/chat" className={styles.pill}>
+            ← Чат руу буцах
           </Link>
 
           <div className={styles.brandDot} aria-hidden />
           <span className={styles.brandText}>Ebook</span>
         </div>
 
-        <h1 className={styles.mainTitle}>Тэмдэглэл</h1>
+        <h1 className={styles.mainTitle}>Номын агуулга</h1>
         <p className={styles.subtitle}>
-          Өдөр тутмын бодол, санаагаа энд бичээд хадгал. “Номонд оруулах” асаалттай бол
-          Preview дээр хуудас тоологдоно.
+          Та доорх карт бүр дээр дараад тухайн сэдвийн хуудсан дээр сэтгэлээ бичээрэй.
         </p>
 
-        {/* Editor card */}
-        <div
-          className={styles.categoryCard}
-          style={{
-            display: "block",
-            padding: 18,
-            textDecoration: "none",
-          }}
-        >
-          <div style={{ display: "grid", gap: 10 }}>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Гарчиг (заавал биш)"
-              style={{
-                width: "100%",
-                borderRadius: 12,
-                padding: "12px 12px",
-                border: "1px solid rgba(255,255,255,0.16)",
-                background: "rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.92)",
-                outline: "none",
-              }}
-            />
+        <div className={styles.categoriesGrid}>
+          {CATS.map((c) => {
+            const pages = pageCountBySection[c.id] ?? 0;
 
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Энд тэмдэглэлээ бичээрэй…"
-              rows={7}
-              style={{
-                width: "100%",
-                borderRadius: 12,
-                padding: "12px 12px",
-                border: "1px solid rgba(255,255,255,0.16)",
-                background: "rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.92)",
-                outline: "none",
-                lineHeight: 1.7,
-                resize: "vertical",
-              }}
-            />
-
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "center",
-                  color: "rgba(255,255,255,0.85)",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={includeInBook}
-                  onChange={(e) => setIncludeInBook(e.target.checked)}
-                />
-                Номонд оруулах
-              </label>
-
-              <button
-                onClick={addNote}
-                disabled={!canSave}
-                style={{
-                  borderRadius: 999,
-                  padding: "10px 14px",
-                  border: "1px solid rgba(255,255,255,0.16)",
-                  background: canSave ? "rgba(31,111,178,0.32)" : "rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.92)",
-                  cursor: canSave ? "pointer" : "not-allowed",
-                }}
-              >
-                Хадгалах
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* List */}
-        <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
-          {sorted.length === 0 ? (
-            <div style={{ color: "rgba(255,255,255,0.75)", padding: 8 }}>
-              Одоогоор тэмдэглэл алга. Дээрээс эхний тэмдэглэлээ бичээрэй.
-            </div>
-          ) : (
-            sorted.map((n) => (
-              <div
-                key={n.id}
-                className={styles.categoryCard}
-                style={{
-                  display: "block",
-                  padding: 18,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 10,
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <h4 style={{ margin: 0 }}>{n.title || "(гарчиггүй)"}</h4>
-
-                    <div className={styles.categorySub} style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>
-                      {n.content}
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 10,
-                        display: "flex",
-                        gap: 10,
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                      }}
-                    >
-                      <button
-                        onClick={() => toggleInclude(n.id)}
-                        style={{
-                          borderRadius: 999,
-                          padding: "8px 12px",
-                          border: "1px solid rgba(255,255,255,0.16)",
-                          background: "rgba(255,255,255,0.08)",
-                          color: "rgba(255,255,255,0.9)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {n.includeInBook ? "✓ Номонд орно" : "Номонд оруулах"}
-                      </button>
-
-                      <span style={{ color: "rgba(255,255,255,0.60)", fontSize: 12 }}>
-                        {new Date(n.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => removeNote(n.id)}
-                    style={{
-                      borderRadius: 999,
-                      padding: "8px 12px",
-                      border: "1px solid rgba(255,255,255,0.16)",
-                      background: "rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.85)",
-                      cursor: "pointer",
-                      flexShrink: 0,
-                    }}
-                  >
-                    Устгах
-                  </button>
+            return (
+              <Link key={c.id} href={c.href} className={styles.categoryCard}>
+                <div className={styles.catThumb}>
+                  <img src={c.img} alt={c.title} />
                 </div>
-              </div>
-            ))
-          )}
-        </div>
 
-        <div style={{ marginTop: 16, color: "rgba(255,255,255,0.55)", fontSize: 12 }}>
-          oyunsanaa · ebooks/notes (localStorage: {STORAGE_KEY})
+                <h4>{c.title}</h4>
+                <div className={styles.categorySub}>{c.sub}</div>
+
+                <span className={styles.pageIndicator}>
+                  {c.kind === "section" ? `${pages} хуудас` : "Нээх"}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
+
+      {/* ✅ Tailwind class хэрэглэхгүй — build дээр зөрөхөөс хамгаалав */}
+      <div
+        ref={measureRef}
+        style={{
+          position: "fixed",
+          left: -99999,
+          top: -99999,
+          width: 420,
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+      />
     </main>
   );
 }
