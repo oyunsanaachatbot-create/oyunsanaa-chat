@@ -33,12 +33,12 @@ const I18N: Record<Lang, Record<Key, string>> = {
     error: 'Алдаа гарлаа',
   },
   en: {
-    title: 'OS — Sign up',
+    title: 'OS — Register',
     haveAccount: 'Already have an account?',
     name: 'Name',
     email: 'Email',
     password: 'Password',
-    signUp: 'Sign up',
+    signUp: 'Create account',
     google: 'Continue with Google',
     backLogin: 'Back to login',
     nextLabel: 'Next:',
@@ -52,7 +52,7 @@ const I18N: Record<Lang, Record<Key, string>> = {
     password: 'Пароль',
     signUp: 'Зарегистрироваться',
     google: 'Продолжить с Google',
-    backLogin: 'Назад к входу',
+    backLogin: 'Назад ко входу',
     nextLabel: 'Далее:',
     error: 'Произошла ошибка',
   },
@@ -62,7 +62,7 @@ const I18N: Record<Lang, Record<Key, string>> = {
     name: '名前',
     email: 'メール',
     password: 'パスワード',
-    signUp: '登録',
+    signUp: '登録する',
     google: 'Googleで続行',
     backLogin: 'ログインへ戻る',
     nextLabel: '次へ:',
@@ -74,9 +74,9 @@ const I18N: Record<Lang, Record<Key, string>> = {
     name: '이름',
     email: '이메일',
     password: '비밀번호',
-    signUp: '회원가입',
+    signUp: '가입하기',
     google: 'Google로 계속',
-    backLogin: '로그인으로 돌아가기',
+    backLogin: '로그인으로',
     nextLabel: 'Next:',
     error: '오류가 발생했습니다',
   },
@@ -87,9 +87,9 @@ export default function RegisterClient() {
   const sp = useSearchParams();
 
   const [lang] = useState<Lang>('mn');
+  const t = (k: Key) => I18N[lang][k];
 
   const next = useMemo(() => sp.get('next') || '/chat', [sp]);
-  const t = (k: Key) => I18N[lang][k];
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -100,35 +100,24 @@ export default function RegisterClient() {
 
   const goNext = () => router.replace(next);
 
-  const goLogin = () => {
-    router.replace(`/login?next=${encodeURIComponent(next)}`);
-  };
-
   const signUpWithPassword = async () => {
     setBusy(true);
     setErr(null);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: name,
-            name: name,
+            full_name: name, // ✅ энэ нь Sidebar/Header дээр чинь name болж орж ирнэ
           },
         },
       });
       if (error) throw error;
 
-      // Зарим тохиргоонд email confirmation байж болно.
-      // Хэрэв session шууд үүсвэл next рүү орно.
-      if (data.session) {
-        goNext();
-        return;
-      }
-
-      // session байхгүй бол (email confirm асаалттай) login руу буцаана.
-      router.replace(`/login?next=${encodeURIComponent(next)}`);
+      // Email confirmation OFF бол шууд нэвтэрч next рүү орно
+      // ON бол хэрэглэгч mail дээрээ баталгаажуулж байж нэвтэрнэ (тэр үед login руу явуулж болно)
+      goNext();
     } catch (e: any) {
       setErr(e?.message || t('error'));
     } finally {
@@ -140,111 +129,5 @@ export default function RegisterClient() {
     setBusy(true);
     setErr(null);
     try {
-      const origin = window.location.origin;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        },
-      });
-      if (error) throw error;
-    } catch (e: any) {
-      setErr(e?.message || t('error'));
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0b1a2a' }}>
-      <div
-        style={{
-          width: 'min(520px, 92vw)',
-          borderRadius: 18,
-          padding: 22,
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          color: 'white',
-        }}
-      >
-        <h1 style={{ textAlign: 'center', margin: '4px 0 14px' }}>{t('title')}</h1>
-
-        <label style={{ display: 'block', opacity: 0.9, marginBottom: 6 }}>{t('name')}</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Oyunsanaa"
-          style={inputStyle}
-          autoComplete="name"
-        />
-
-        <label style={{ display: 'block', opacity: 0.9, margin: '12px 0 6px' }}>{t('email')}</label>
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="name@mail.com"
-          style={inputStyle}
-          autoComplete="email"
-        />
-
-        <label style={{ display: 'block', opacity: 0.9, margin: '12px 0 6px' }}>{t('password')}</label>
-        <input
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          style={inputStyle}
-          type="password"
-          autoComplete="new-password"
-        />
-
-        {err && (
-          <div style={{ marginTop: 10, color: '#ffb4b4', fontSize: 13 }}>
-            {t('error')}: {err}
-          </div>
-        )}
-
-        <button
-          onClick={signUpWithPassword}
-          disabled={busy || !name || !email || !password}
-          style={{ ...btnStyle, marginTop: 14, background: BRAND }}
-        >
-          {busy ? '...' : t('signUp')}
-        </button>
-
-        <button onClick={signUpWithGoogle} disabled={busy} style={{ ...btnStyle, marginTop: 10, background: 'transparent' }}>
-          {t('google')}
-        </button>
-
-        <div style={{ marginTop: 12, fontSize: 13, opacity: 0.9, display: 'flex', justifyContent: 'space-between' }}>
-          <span>{t('haveAccount')}</span>
-          <button onClick={goLogin} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 700 }}>
-            {t('backLogin')}
-          </button>
-        </div>
-
-        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
-          {t('nextLabel')} {next}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 12px',
-  borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.18)',
-  background: 'rgba(0,0,0,0.18)',
-  color: 'white',
-  outline: 'none',
-};
-
-const btnStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 14px',
-  borderRadius: 12,
-  border: '1px solid rgba(255,255,255,0.18)',
-  color: 'white',
-  fontWeight: 700,
-  cursor: 'pointer',
-};
+      // Google-р ороод буцаж ирэхэд нэрээ алдахгүйн тулд түр хадгална
+      if (name
