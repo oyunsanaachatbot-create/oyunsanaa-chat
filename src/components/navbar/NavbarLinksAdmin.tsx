@@ -23,34 +23,32 @@ import APIModal from '@/components/apiModal';
 import NavLink from '../link/NavLink';
 import routes from '@/routes';
 
-// ✅ нэмсэн
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/browser';
 
 type UserMini = { email: string; name: string };
 
-function initialsFromName(name: string) {
-  const parts = (name || '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  const a = (parts[0]?.[0] ?? 'U').toUpperCase();
-  const b = (parts[1]?.[0] ?? '').toUpperCase();
+function initialsFromName(name?: string) {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+
+  // нэр байхгүй үед OS
+  if (parts.length === 0) return 'OS';
+
+  const a = (parts[0]?.[0] ?? 'O').toUpperCase();
+  // нэг үгтэй нэр байвал 2 дахь үсгийг S гэж өгөөд OS маягийн болгоно
+  const b = (parts[1]?.[0] ?? 'S').toUpperCase();
   return (a + b).slice(0, 2);
 }
 
-export default function HeaderLinks(props: {
-  secondary: boolean;
-  setApiKey: any;
-}) {
+export default function HeaderLinks(props: { secondary: boolean; setApiKey: any }) {
   const { secondary, setApiKey } = props;
   const router = useRouter();
 
   const { colorMode, toggleColorMode } = useColorMode();
-  // Chakra Color Mode
+
   const navbarIcon = useColorModeValue('gray.500', 'white');
-  let menuBg = useColorModeValue('white', 'navy.800');
+  const menuBg = useColorModeValue('white', 'navy.800');
   const textColor = useColorModeValue('navy.700', 'white');
   const borderColor = useColorModeValue('#E6ECFA', 'rgba(135, 140, 189, 0.3)');
   const shadow = useColorModeValue(
@@ -58,16 +56,9 @@ export default function HeaderLinks(props: {
     '0px 41px 75px #081132',
   );
   const buttonBg = useColorModeValue('transparent', 'navy.800');
-  const hoverButton = useColorModeValue(
-    { bg: 'gray.100' },
-    { bg: 'whiteAlpha.100' },
-  );
-  const activeButton = useColorModeValue(
-    { bg: 'gray.200' },
-    { bg: 'whiteAlpha.200' },
-  );
+  const hoverButton = useColorModeValue({ bg: 'gray.100' }, { bg: 'whiteAlpha.100' });
+  const activeButton = useColorModeValue({ bg: 'gray.200' }, { bg: 'whiteAlpha.200' });
 
-  // ✅ user state
   const [user, setUser] = useState<UserMini | null>(null);
 
   useEffect(() => {
@@ -85,18 +76,16 @@ export default function HeaderLinks(props: {
       }
 
       const email = u.email ?? '';
-      const fallback = (email || 'User').split('@')[0];
       const name =
         (u.user_metadata?.full_name as string) ||
         (u.user_metadata?.name as string) ||
-        fallback;
+        'Oyunsanaa';
 
       setUser({ email, name });
     };
 
     load();
 
-    // auth өөрчлөгдвөл header автоматаар шинэчлэгдэнэ
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
       load();
     });
@@ -107,11 +96,11 @@ export default function HeaderLinks(props: {
     };
   }, []);
 
-  const initials = useMemo(() => initialsFromName(user?.name ?? 'User'), [user?.name]);
+  const initials = useMemo(() => initialsFromName(user?.name), [user?.name]);
 
   const logout = async () => {
     await supabase.auth.signOut();
-    router.replace('/login?next=/chat');
+    router.replace('/guest');
   };
 
   const goLogin = () => {
@@ -131,28 +120,17 @@ export default function HeaderLinks(props: {
       boxShadow={shadow}
     >
       <SearchBar
-        mb={() => {
-          if (secondary) {
-            return { base: '10px', md: 'unset' };
-          }
-          return 'unset';
-        }}
+        mb={() => (secondary ? { base: '10px', md: 'unset' } : 'unset')}
         me="10px"
         borderRadius="30px"
       />
+
       <SidebarResponsive routes={routes} />
       <APIModal setApiKey={setApiKey} />
 
       <Menu>
         <MenuButton p="0px">
-          <Icon
-            mt="6px"
-            as={MdInfoOutline}
-            color={navbarIcon}
-            w="18px"
-            h="18px"
-            me="10px"
-          />
+          <Icon mt="6px" as={MdInfoOutline} color={navbarIcon} w="18px" h="18px" me="10px" />
         </MenuButton>
         <MenuList
           boxShadow={shadow}
@@ -192,7 +170,6 @@ export default function HeaderLinks(props: {
                 w="100%"
                 minW="44px"
                 h="44px"
-                _placeholder={{ color: 'gray.500' }}
                 _hover={hoverButton}
                 _active={activeButton}
                 _focus={activeButton}
@@ -236,7 +213,7 @@ export default function HeaderLinks(props: {
         />
       </Button>
 
-      {/* ✅ User menu */}
+      {/* User menu */}
       <Menu>
         <MenuButton p="0px" style={{ position: 'relative' }}>
           <Box
@@ -245,28 +222,21 @@ export default function HeaderLinks(props: {
             bg="#11047A"
             w="40px"
             h="40px"
-            borderRadius={'50%'}
+            borderRadius="50%"
           />
-          <Center top={0} left={0} position={'absolute'} w={'100%'} h={'100%'}>
-            <Text fontSize={'xs'} fontWeight="bold" color={'white'}>
+          <Center top={0} left={0} position="absolute" w="100%" h="100%">
+            <Text fontSize="xs" fontWeight="bold" color="white">
               {initials}
             </Text>
           </Center>
         </MenuButton>
 
-        <MenuList
-          boxShadow={shadow}
-          p="0px"
-          mt="10px"
-          borderRadius="20px"
-          bg={menuBg}
-          border="none"
-        >
+        <MenuList boxShadow={shadow} p="0px" mt="10px" borderRadius="20px" bg={menuBg} border="none">
           <Flex w="100%" mb="0px" flexDirection="column">
             <Text
               ps="20px"
               pt="16px"
-              pb="6px"
+              pb="12px"
               w="100%"
               borderBottom="1px solid"
               borderColor={borderColor}
@@ -274,22 +244,9 @@ export default function HeaderLinks(props: {
               fontWeight="700"
               color={textColor}
             >
-              👋&nbsp; Hey, {user?.name ?? 'Guest'}
+              👋&nbsp; {user ? `Hey, ${user.name}` : 'Hey, сайн уу'}
             </Text>
-
-            {/* email line */}
-            <Text
-              ps="20px"
-              pb="10px"
-              w="100%"
-              borderBottom="1px solid"
-              borderColor={borderColor}
-              fontSize="xs"
-              opacity={0.75}
-              color={textColor}
-            >
-              {user?.email ?? 'Not signed in'}
-            </Text>
+            {/* ✅ Email мөрийг бүрэн авч хаясан */}
           </Flex>
 
           <Flex flexDirection="column" p="10px">
@@ -319,7 +276,6 @@ export default function HeaderLinks(props: {
               </Text>
             </MenuItem>
 
-            {/* ✅ Login/Logout зөв холбосон */}
             {user ? (
               <MenuItem
                 onClick={logout}
@@ -343,7 +299,7 @@ export default function HeaderLinks(props: {
                 px="14px"
               >
                 <Text fontWeight="600" fontSize="sm">
-                  Log in
+                  Нэвтрэх / Бүртгүүлэх
                 </Text>
               </MenuItem>
             )}
