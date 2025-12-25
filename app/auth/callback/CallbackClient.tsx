@@ -13,11 +13,19 @@ export default function CallbackClient() {
       const next = sp.get('next') || '/chat';
       const code = sp.get('code');
 
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
+      try {
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+        }
+      } catch (e) {
+        // алдаа гарлаа ч хэрэглэгчийг login руу буцааж болно
+        router.replace(`/login?next=${encodeURIComponent(next)}`);
+        return;
       }
+
       router.replace(next);
     };
+
     run();
   }, [router, sp]);
 
