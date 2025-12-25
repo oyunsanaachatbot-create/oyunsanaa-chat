@@ -15,6 +15,7 @@ import {
   useColorMode,
   useColorModeValue,
 } from '@chakra-ui/react';
+
 import { SearchBar } from '@/components/navbar/searchBar/SearchBar';
 import { SidebarResponsive } from '@/components/sidebar/Sidebar';
 import { IoMdMoon, IoMdSunny } from 'react-icons/io';
@@ -31,12 +32,8 @@ type UserMini = { email: string; name: string };
 
 function initialsFromName(name?: string) {
   const parts = (name || '').trim().split(/\s+/).filter(Boolean);
-
-  // нэр байхгүй үед OS
   if (parts.length === 0) return 'OS';
-
   const a = (parts[0]?.[0] ?? 'O').toUpperCase();
-  // нэг үгтэй нэр байвал 2 дахь үсгийг S гэж өгөөд OS маягийн болгоно
   const b = (parts[1]?.[0] ?? 'S').toUpperCase();
   return (a + b).slice(0, 2);
 }
@@ -98,13 +95,15 @@ export default function HeaderLinks(props: { secondary: boolean; setApiKey: any 
 
   const initials = useMemo(() => initialsFromName(user?.name), [user?.name]);
 
+  // ✅ Logout: заавал login руу
   const logout = async () => {
-  await supabase.auth.signOut();
-  router.replace('/login?next=/chat');
-};
-
-  const goLogin = () => {
+    await supabase.auth.signOut();
     router.replace('/login?next=/chat');
+  };
+
+  // ✅ Login байхгүй үед: зөвхөн Register руу
+  const goRegister = () => {
+    router.replace('/register?next=/chat');
   };
 
   return (
@@ -236,7 +235,7 @@ export default function HeaderLinks(props: { secondary: boolean; setApiKey: any 
             <Text
               ps="20px"
               pt="16px"
-              pb="12px"
+              pb="10px"
               w="100%"
               borderBottom="1px solid"
               borderColor={borderColor}
@@ -246,7 +245,20 @@ export default function HeaderLinks(props: { secondary: boolean; setApiKey: any 
             >
               👋&nbsp; {user ? `Hey, ${user.name}` : 'Hey, сайн уу'}
             </Text>
-            {/* ✅ Email мөрийг бүрэн авч хаясан */}
+
+            {user?.email ? (
+              <Text
+                ps="20px"
+                pb="12px"
+                w="100%"
+                borderBottom="1px solid"
+                borderColor={borderColor}
+                fontSize="xs"
+                color={navbarIcon}
+              >
+                {user.email}
+              </Text>
+            ) : null}
           </Flex>
 
           <Flex flexDirection="column" p="10px">
@@ -276,33 +288,19 @@ export default function HeaderLinks(props: { secondary: boolean; setApiKey: any 
               </Text>
             </MenuItem>
 
-            {user ? (
-              <MenuItem
-                onClick={logout}
-                _hover={{ bg: 'none' }}
-                _focus={{ bg: 'none' }}
-                color="red.400"
-                borderRadius="8px"
-                px="14px"
-              >
-                <Text fontWeight="500" fontSize="sm">
-                  Log out
-                </Text>
-              </MenuItem>
-            ) : (
-              <MenuItem
-                onClick={goLogin}
-                _hover={{ bg: 'none' }}
-                _focus={{ bg: 'none' }}
-                color={textColor}
-                borderRadius="8px"
-                px="14px"
-              >
-                <Text fontWeight="600" fontSize="sm">
-                  Нэвтрэх / Бүртгүүлэх
-                </Text>
-              </MenuItem>
-            )}
+            {/* ✅ Нэг л товч: loginгүй үед "Бүртгүүлэх", loginтэй үед "Гарах" */}
+            <MenuItem
+              onClick={user ? logout : goRegister}
+              _hover={{ bg: 'none' }}
+              _focus={{ bg: 'none' }}
+              color={user ? 'red.400' : textColor}
+              borderRadius="8px"
+              px="14px"
+            >
+              <Text fontWeight="600" fontSize="sm">
+                {user ? 'Гарах' : 'Бүртгүүлэх'}
+              </Text>
+            </MenuItem>
           </Flex>
         </MenuList>
       </Menu>
