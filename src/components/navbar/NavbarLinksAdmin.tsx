@@ -99,9 +99,9 @@ export default function HeaderLinks(props: { secondary: boolean; setApiKey: any 
   const initials = useMemo(() => initialsFromName(user?.name), [user?.name]);
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    router.replace('/guest');
-  };
+  await supabase.auth.signOut();
+  router.replace('/login?next=/chat');
+};
 
   const goLogin = () => {
     router.replace('/login?next=/chat');
