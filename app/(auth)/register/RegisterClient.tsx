@@ -1,28 +1,18 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/browser';
 
 const BRAND = '#1F6FB2';
 
 type Lang = 'mn';
-type Key =
-  | 'title'
-  | 'haveAccount'
-  | 'name'
-  | 'email'
-  | 'password'
-  | 'signUp'
-  | 'google'
-  | 'backLogin'
-  | 'error';
+type Key = 'title' | 'haveAccount' | 'email' | 'password' | 'signUp' | 'google' | 'backLogin' | 'error';
 
 const I18N: Record<Lang, Record<Key, string>> = {
   mn: {
     title: 'OS — Бүртгэл',
     haveAccount: 'Бүртгэлтэй юу?',
-    name: 'Нэр',
     email: 'И-мэйл',
     password: 'Нууц үг',
     signUp: 'Бүртгүүлэх',
@@ -39,7 +29,6 @@ export default function RegisterClient() {
 
   const next = '/chat';
 
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,7 +36,7 @@ export default function RegisterClient() {
 
   const goNext = () => router.replace(next);
 
-  // ✅ EMAIL + PASSWORD БҮРТГЭЛ
+  // ✅ EMAIL + PASSWORD БҮРТГЭЛ (нэргүй)
   const signUpWithPassword = async () => {
     setBusy(true);
     setErr(null);
@@ -55,11 +44,6 @@ export default function RegisterClient() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            full_name: name, // 🔥 Sidebar / Header эндээс уншина
-          },
-        },
       });
       if (error) throw error;
 
@@ -94,16 +78,7 @@ export default function RegisterClient() {
   return (
     <div style={pageStyle}>
       <div style={cardStyle}>
-        <h1 style={{ textAlign: 'center', marginBottom: 16 }}>
-          {t('title')}
-        </h1>
-
-        <label>{t('name')}</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={inputStyle}
-        />
+        <h1 style={{ textAlign: 'center', marginBottom: 16 }}>{t('title')}</h1>
 
         <label>{t('email')}</label>
         <input
@@ -122,25 +97,17 @@ export default function RegisterClient() {
           autoComplete="new-password"
         />
 
-        {err && (
-          <div style={{ color: '#ffb4b4', fontSize: 13 }}>
-            {err}
-          </div>
-        )}
+        {err && <div style={{ color: '#ffb4b4', fontSize: 13 }}>{err}</div>}
 
         <button
           onClick={signUpWithPassword}
-          disabled={busy || !name || !email || !password}
+          disabled={busy || !email || !password}
           style={{ ...btnStyle, background: BRAND }}
         >
           {busy ? '...' : t('signUp')}
         </button>
 
-        <button
-          onClick={signUpWithGoogle}
-          disabled={busy}
-          style={{ ...btnStyle, marginTop: 10 }}
-        >
+        <button onClick={signUpWithGoogle} disabled={busy} style={{ ...btnStyle, marginTop: 10 }}>
           {t('google')}
         </button>
 
