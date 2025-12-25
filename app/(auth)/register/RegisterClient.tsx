@@ -9,80 +9,74 @@ const BRAND = '#1F6FB2';
 type Lang = 'mn' | 'en' | 'ru' | 'ja' | 'ko';
 type Key =
   | 'title'
+  | 'haveAccount'
   | 'name'
   | 'email'
   | 'password'
   | 'signUp'
   | 'google'
-  | 'haveAccount'
-  | 'signIn'
-  | 'backHome'
+  | 'backLogin'
   | 'nextLabel'
   | 'error';
 
 const I18N: Record<Lang, Record<Key, string>> = {
   mn: {
     title: 'OS — Бүртгэл',
+    haveAccount: 'Бүртгэлтэй юу?',
     name: 'Нэр',
     email: 'И-мэйл',
     password: 'Нууц үг',
     signUp: 'Бүртгүүлэх',
     google: 'Google-ээр бүртгүүлэх',
-    haveAccount: 'Бүртгэлтэй юу?',
-    signIn: 'Нэвтрэх',
-    backHome: 'oyunsanaa.com руу буцах',
+    backLogin: 'Нэвтрэх рүү буцах',
     nextLabel: 'Next:',
     error: 'Алдаа гарлаа',
   },
   en: {
     title: 'OS — Sign up',
+    haveAccount: 'Already have an account?',
     name: 'Name',
     email: 'Email',
     password: 'Password',
-    signUp: 'Create account',
+    signUp: 'Sign up',
     google: 'Continue with Google',
-    haveAccount: 'Already have an account?',
-    signIn: 'Sign in',
-    backHome: 'Back to oyunsanaa.com',
+    backLogin: 'Back to login',
     nextLabel: 'Next:',
     error: 'Something went wrong',
   },
   ru: {
     title: 'OS — Регистрация',
+    haveAccount: 'Уже есть аккаунт?',
     name: 'Имя',
     email: 'Email',
     password: 'Пароль',
     signUp: 'Зарегистрироваться',
-    google: 'Продолжить через Google',
-    haveAccount: 'Уже есть аккаунт?',
-    signIn: 'Войти',
-    backHome: 'Назад на oyunsanaa.com',
+    google: 'Продолжить с Google',
+    backLogin: 'Назад к входу',
     nextLabel: 'Далее:',
     error: 'Произошла ошибка',
   },
   ja: {
     title: 'OS — 登録',
+    haveAccount: 'アカウントをお持ちですか？',
     name: '名前',
     email: 'メール',
     password: 'パスワード',
-    signUp: '登録する',
+    signUp: '登録',
     google: 'Googleで続行',
-    haveAccount: 'すでにアカウントがありますか？',
-    signIn: 'ログイン',
-    backHome: 'oyunsanaa.com に戻る',
+    backLogin: 'ログインへ戻る',
     nextLabel: '次へ:',
     error: 'エラーが発生しました',
   },
   ko: {
     title: 'OS — 회원가입',
+    haveAccount: '이미 계정이 있나요?',
     name: '이름',
     email: '이메일',
     password: '비밀번호',
-    signUp: '가입하기',
+    signUp: '회원가입',
     google: 'Google로 계속',
-    haveAccount: '이미 계정이 있나요?',
-    signIn: '로그인',
-    backHome: 'oyunsanaa.com으로 돌아가기',
+    backLogin: '로그인으로 돌아가기',
     nextLabel: 'Next:',
     error: '오류가 발생했습니다',
   },
@@ -93,9 +87,9 @@ export default function RegisterClient() {
   const sp = useSearchParams();
 
   const [lang] = useState<Lang>('mn');
-  const t = (k: Key) => I18N[lang][k];
 
   const next = useMemo(() => sp.get('next') || '/chat', [sp]);
+  const t = (k: Key) => I18N[lang][k];
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -106,24 +100,35 @@ export default function RegisterClient() {
 
   const goNext = () => router.replace(next);
 
-  const signUp = async () => {
+  const goLogin = () => {
+    router.replace(`/login?next=${encodeURIComponent(next)}`);
+  };
+
+  const signUpWithPassword = async () => {
     setBusy(true);
     setErr(null);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: name, // ✅ энэ нь дараа "Hey, {name}" дээр гарна
+            full_name: name,
+            name: name,
           },
         },
       });
       if (error) throw error;
 
-      // Хэрвээ email confirm асаалттай бол энд “шаардлагатай баталгаажуул” гэдэг message хийж болно.
-      // Одоо бол шууд next руу явуулъя:
-      goNext();
+      // Зарим тохиргоонд email confirmation байж болно.
+      // Хэрэв session шууд үүсвэл next рүү орно.
+      if (data.session) {
+        goNext();
+        return;
+      }
+
+      // session байхгүй бол (email confirm асаалттай) login руу буцаана.
+      router.replace(`/login?next=${encodeURIComponent(next)}`);
     } catch (e: any) {
       setErr(e?.message || t('error'));
     } finally {
@@ -198,7 +203,7 @@ export default function RegisterClient() {
         )}
 
         <button
-          onClick={signUp}
+          onClick={signUpWithPassword}
           disabled={busy || !name || !email || !password}
           style={{ ...btnStyle, marginTop: 14, background: BRAND }}
         >
@@ -209,11 +214,11 @@ export default function RegisterClient() {
           {t('google')}
         </button>
 
-        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 13, opacity: 0.9 }}>
-          <a href={`/login?next=${encodeURIComponent(next)}`} style={{ color: 'white' }}>
-            {t('haveAccount')} {t('signIn')}
-          </a>
-          <a href="https://oyunsanaa.com" style={{ color: 'white' }}>{t('backHome')}</a>
+        <div style={{ marginTop: 12, fontSize: 13, opacity: 0.9, display: 'flex', justifyContent: 'space-between' }}>
+          <span>{t('haveAccount')}</span>
+          <button onClick={goLogin} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 700 }}>
+            {t('backLogin')}
+          </button>
         </div>
 
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
