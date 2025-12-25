@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -15,7 +16,7 @@ type Cat = {
 
 const BRAND = "#1F6FB2";
 
-/** SECTION ids нь Preview дээрх SECTION_ORDER-той 1:1 таарах ёстой */
+/** ✅ SECTION ids нь Preview дээрх SECTION_ORDER-той 1:1 таарах ёстой */
 const SECTION_ORDER = [
   "world",
   "memories",
@@ -28,6 +29,19 @@ const SECTION_ORDER = [
   "creatives",
   "personals",
 ] as const;
+
+const SECTION_LABELS: Record<(typeof SECTION_ORDER)[number], string> = {
+  world: "Миний ертөнц",
+  memories: "Амьдралын дурсамж",
+  notes: "Тэмдэглэл",
+  happy: "Талархал · Баярт мөч",
+  letters: "Захидал",
+  difficult: "Хүнд үе",
+  wisdom: "Ухаарал · Сургамж",
+  complaints: "Гомдол ба харуусал",
+  creatives: "Миний уран бүтээл",
+  personals: "Миний булан",
+};
 
 const CATS: Cat[] = [
   {
@@ -137,7 +151,6 @@ function safeJsonParse<T>(s: string | null, fallback: T): T {
     return fallback;
   }
 }
-
 function escEmpty(s: any) {
   return s && String(s).trim() ? String(s) : " ";
 }
@@ -244,21 +257,29 @@ function computePagesForSection(notes: any[], measureEl: HTMLDivElement): number
   return count;
 }
 
-export default function EbookHomeApp() {
+export default function EbookHome() {
   const [notesBySection, setNotesBySection] = useState<Record<string, any[]>>({});
   const measureRef = useRef<HTMLDivElement | null>(null);
+  const [measureReady, setMeasureReady] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const obj: Record<string, any[]> = {};
     SECTION_ORDER.forEach((sid) => {
-      obj[sid] = safeJsonParse<any[]>(localStorage.getItem(`oyun_ebook_notes_${sid}_v1`), []);
+      const key = `oyun_ebook_notes_${sid}_v1`;
+      obj[sid] = safeJsonParse<any[]>(window.localStorage.getItem(key), []);
     });
     setNotesBySection(obj);
   }, []);
 
+  useEffect(() => {
+    if (measureRef.current) setMeasureReady(true);
+  }, []);
+
   const pageCountBySection = useMemo(() => {
     const out: Record<string, number> = {};
-    if (!measureRef.current) return out;
+    if (!measureReady || !measureRef.current) return out;
 
     SECTION_ORDER.forEach((sid) => {
       out[sid] = computePagesForSection(notesBySection[sid] || [], measureRef.current!);
@@ -268,14 +289,13 @@ export default function EbookHomeApp() {
     out["preview"] = 0;
 
     return out;
-  }, [notesBySection]);
+  }, [notesBySection, measureReady]);
 
   return (
     <main className={styles.ebookBody} style={{ ["--brand" as any]: BRAND }}>
       <div className={styles.container}>
         <div className={styles.topbar}>
-          {/* ✅ "/" биш. Horizon дээр chat-д буцаах зөв замаа энд тавь */}
-          <Link href="/dashboard/chat" className={styles.pill}>
+          <Link href="/" className={styles.pill}>
             ← Чат руу буцах
           </Link>
 
@@ -285,7 +305,7 @@ export default function EbookHomeApp() {
 
         <h1 className={styles.mainTitle}>Номын агуулга</h1>
         <p className={styles.subtitle}>
-          Та доорх карт бүр дээр дараад тухайн сэдвийн хуудсан дээр сэтгэлээ бичээрэй.
+          Та доорх карт бүр дээр дараад тухайн сэдвийн хуудас дээр сэтгэлээ бичээрэй.
         </p>
 
         <div className={styles.categoriesGrid}>
@@ -310,17 +330,9 @@ export default function EbookHomeApp() {
         </div>
       </div>
 
-      {/* ✅ Tailwind class хэрэглэхгүй — build дээр зөрөхөөс хамгаалав */}
       <div
         ref={measureRef}
-        style={{
-          position: "fixed",
-          left: -99999,
-          top: -99999,
-          width: 420,
-          opacity: 0,
-          pointerEvents: "none",
-        }}
+        className="fixed -left-[99999px] -top-[99999px] w-[420px] opacity-0 pointer-events-none"
       />
     </main>
   );
