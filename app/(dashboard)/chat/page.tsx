@@ -1,17 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase/browser';
-
-// ✅ чиний жинхэнэ CHAT UI
 import Chat from '@/components/Chat';
 
-export default function ChatPage(props: { guest?: boolean }) {
+export default function ChatPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [checking, setChecking] = useState(true);
 
-  const isGuest = !!props.guest;
+  // ✅ /guest дээр бол login шаардахгүй
+  const isGuest = pathname === '/guest';
 
   useEffect(() => {
     let alive = true;
@@ -22,14 +22,12 @@ export default function ChatPage(props: { guest?: boolean }) {
 
       if (!alive) return;
 
-      // ✅ Guest биш үед л login шаардана
+      // ✅ зөвхөн /chat дээр л login шаардана
       if (!user && !isGuest) {
-        // ⚠️ /(auth) гэдэг нь URL биш — route group тул 404 болно
-        router.replace('/login?next=/chat');
+        router.replace('/login?next=/chat'); // ⚠️ /(auth) битгий хэрэглэ
         return;
       }
 
-      // ✅ user байгаа эсвэл guest mode бол chat UI харуул
       setChecking(false);
     };
 
@@ -39,9 +37,7 @@ export default function ChatPage(props: { guest?: boolean }) {
     };
   }, [router, isGuest]);
 
-  if (checking) {
-    return <div style={{ padding: 24 }}>Checking session...</div>;
-  }
+  if (checking) return <div style={{ padding: 24 }}>Checking session...</div>;
 
   return <Chat />;
 }
