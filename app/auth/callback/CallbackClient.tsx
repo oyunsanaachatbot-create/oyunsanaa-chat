@@ -13,8 +13,9 @@ export default function CallbackClient() {
       const next = sp.get('next') || '/chat';
       const code = sp.get('code');
 
-      if (code) await supabase.auth.exchangeCodeForSession(code);
-
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+      }
       router.replace(next);
     };
     run();
