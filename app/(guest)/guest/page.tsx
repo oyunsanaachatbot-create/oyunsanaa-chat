@@ -1,7 +1,7 @@
 'use client';
 
-import ChatShell from '../../../components/ChatShell';
+import Chat from './Chat';
 
-export default function GuestPage() {
-  return <ChatShell />;
+export default function ChatShell() {
+  return <Chat />;
 }
