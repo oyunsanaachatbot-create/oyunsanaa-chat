@@ -115,6 +115,11 @@ export function useChat() {
     await loadRecent();
   }, [createNewChat, loadRecent]);
 
+  const startNewChat = useCallback(async () => {
+  await createNewChat();
+  await loadRecent();
+}, [createNewChat, loadRecent]);
+
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
